@@ -128,3 +128,29 @@ class AIProviderFactory:
             default_model=default_model,
         )
 
+
+
+    def create_with_overrides(
+        self,
+        provider_name: AIProviderName | None = None,
+        api_key: str | None = None,
+        base_url: str | None = None,
+        model: str | None = None,
+    ) -> AIProvider:
+        """
+        Create an AI provider with optional overrides.
+        Falls back to settings when overrides are not provided.
+        """
+        from pydantic import SecretStr
+        from httpx import URL
+        
+        selected = provider_name or self.settings.ai_default_provider
+        _orig_api_key = getattr(self.settings, f"{selected.value}_api_key", None)
+        _orig_base_url = str(getattr(self.settings, f"{selected.value}_base_url", ""))
+        _orig_model = self.settings.ai_analysis_model
+        
+        _final_key = SecretStr(api_key) if api_key else _orig_api_key
+        _final_url = base_url or _orig_base_url
+        _final_model = model or _orig_model
+        
+        return self._create_openai_compatible(selected, _final_key, _final_url, _final_model)
