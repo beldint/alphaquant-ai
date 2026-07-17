@@ -80,6 +80,9 @@ class AnalysisService:
             objective_data=objective_data,
             technical_summary=technical_summary,
             risk_summary=risk_summary,
+            model=model,
+            api_base_url=api_base_url,
+            api_key=api_key,
         )
         response = StockAnalysisResponse(
             symbol=symbol,
@@ -107,6 +110,9 @@ class AnalysisService:
         objective_data: dict[str, object],
         technical_summary: dict[str, object],
         risk_summary: dict[str, object],
+        model: str | None = None,
+        api_base_url: str | None = None,
+        api_key: str | None = None,
     ) -> str:
         """
         Generate Markdown analysis report through the configured AI provider.
