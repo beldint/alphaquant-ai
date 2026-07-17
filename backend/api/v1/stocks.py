@@ -18,6 +18,22 @@ from backend.services.stock_service import stock_service
 
 
 router = APIRouter(prefix="/stocks", tags=["stocks"])
+def _convert_kline(decimal_fields, bars):
+    """Convert KlineBar Decimal fields to float for JSON serialization."""
+    import json
+    from decimal import Decimal
+    result = []
+    for bar in bars:
+        d = bar.model_dump()
+        for field in decimal_fields:
+            val = d.get(field)
+            if isinstance(val, Decimal):
+                d[field] = float(val)
+            elif isinstance(val, str):
+                d[field] = float(val) if val.replace('.', '', 1).lstrip('-').isdigit() else val
+        result.append(d)
+    return result
+
 
 
 @router.get("/search", response_model=APIResponse[list[StockResponse]])
@@ -100,4 +116,5 @@ async def get_kline(
         end_date=end_date,
         adjust=adjust,
     )
-    return build_success_response([bar.model_dump(mode="json") for bar in bars])
+    decimal_fields = ["open_price","high_price","low_price","close_price","volume","amount"]
+    return build_success_response(_convert_kline(decimal_fields, bars))
