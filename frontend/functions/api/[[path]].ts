@@ -125,6 +125,8 @@ export async function onRequest(context) {
           });
           let finData = await finResp.json();
           let fin = (finData.data||{}).items||[];
+          let finRow = fin.length > 0 ? fin[0] : [];
+          if (!finRow || !finRow[0]) { throw new Error("Tushare financial data empty"); }
           
           return emResp({code:0,message:"success",data:{
             market_cap: null, pe_ttm: null, pb: null, peg: null, dividend_yield: null,
