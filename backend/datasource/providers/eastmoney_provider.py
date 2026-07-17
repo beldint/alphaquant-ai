@@ -95,14 +95,14 @@ class EastMoneyStockProvider(StockProvider):
         resp = await self._http.get(EM_QUOTE_URL, params=params)
         data = (resp.json()).get('data') or {}
         name = str(data.get('f58', symbol))
-        price = self._d(data.get('f43'))
-        high = self._d(data.get('f44'))
-        low = self._d(data.get('f45'))
-        open_p = self._d(data.get('f46'))
-        volume = self._d(data.get('f47'), 1)
-        amount = self._d(data.get('f48'), 1)
-        change = self._d(data.get('f169'))
-        pct = self._d(data.get('f170'))
+        price = self._p(data.get('f43'))
+        high = self._p(data.get('f44'))
+        low = self._p(data.get('f45'))
+        open_p = self._p(data.get('f46'))
+        volume = self._v(data.get('f47'), Decimal('1'))
+        amount = self._v(data.get('f48'), Decimal('1'))
+        change = self._p(data.get('f169'))
+        pct = self._p(data.get('f170'))
         return RealtimeQuote(
             symbol=symbol, name=name, market=market,
             price=price, change=change, pct_change=pct,
@@ -146,7 +146,12 @@ class EastMoneyStockProvider(StockProvider):
         return bars
 
     @staticmethod
-    def _d(val, default=Decimal('0')) -> Decimal:
+    def _p(val, default=Decimal('0')) -> Decimal:
+        if val is None: return default
+        try: return Decimal(str(val)) / Decimal('100')
+        except: return default
+    @staticmethod
+    def _v(val, default=Decimal('0')) -> Decimal:
         if val is None: return default
         try: return Decimal(str(val))
         except: return default
