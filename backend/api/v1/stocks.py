@@ -15,6 +15,8 @@ from fastapi import APIRouter, Query
 from backend.core.responses import APIResponse, build_success_response
 from backend.schemas.stock import QuoteResponse, StockResponse
 from backend.services.stock_service import stock_service
+from backend.services.scoring_service import StockScorer
+from backend.schemas.analysis import StockScoreResponse
 
 
 router = APIRouter(prefix="/stocks", tags=["stocks"])
@@ -90,6 +92,45 @@ async def get_quote(
 
 @router.get("/{symbol}/kline", response_model=APIResponse[list[dict[str, object]]])
 async def get_kline(
+
+
+@router.get("/{symbol}/score", response_model=APIResponse[StockScoreResponse])
+async def get_stock_score(
+    symbol: str,
+    market: str = Query(default="A", pattern="^(A|HK|US)$"),
+) -> APIResponse[StockScoreResponse]:
+    """Get 100-point stock score."""
+    from datetime import date, timedelta
+    from backend.datasource.providers.base import KlineBar, Market
+    quote = await stock_service.get_realtime_quote(symbol, market)
+    end = date.today()
+    start = end - timedelta(days=120)
+    bars = await stock_service.get_daily_kline(symbol, market=market, start_date=start, end_date=end)
+    import pandas as pd
+    frame = pd.DataFrame([
+        {"trade_date": b.trade_date, "open": float(b.open_price), "high": float(b.high_price),
+         "low": float(b.low_price), "close": float(b.close_price),
+         "volume": float(b.volume), "amount": float(b.amount)} for b in bars
+    ])
+    if not frame.empty:
+        frame = frame.sort_values("trade_date").set_index("trade_date")
+        from backend.indicators.calculator import IndicatorCalculator
+        calc = IndicatorCalculator()
+        ind_frame = calc.calculate_all(frame)
+        scorer = StockScorer()
+        result = scorer.score_from_indicators(ind_frame, symbol=symbol, name=quote.name)
+    else:
+        from backend.services.scoring_service import StockScoreResult
+        result = StockScoreResult(symbol=symbol, name=quote.name)
+    return build_success_response(StockScoreResponse(
+        symbol=result.symbol, name=result.name,
+        total_score=result.total_score, tech_score=result.tech_score,
+        volume_score=result.volume_score, fundamental_score=result.fundamental_score,
+        valuation_score=result.valuation_score, sentiment_score=result.sentiment_score,
+        summary=result.summary, strengths=result.strengths,
+        risks=result.risks, suggestion=result.suggestion
+    ))
+
     symbol: str,
     market: Literal["A", "HK", "US"] = Query(default="A"),
     start_date: date | None = Query(default=None),
