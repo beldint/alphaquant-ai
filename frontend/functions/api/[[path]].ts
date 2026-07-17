@@ -15,87 +15,96 @@ const STOCKS = [
   {s:'600276',n:'恒瑞医药',e:'SSE'},{s:'600309',n:'万华化学',e:'SSE'},{s:'600519',n:'贵州茅台',e:'SSE'},
   {s:'600585',n:'海螺水泥',e:'SSE'},{s:'600690',n:'海尔智家',e:'SSE'},{s:'600809',n:'山西汾酒',e:'SSE'},
   {s:'600887',n:'伊利股份',e:'SSE'},{s:'600900',n:'长江电力',e:'SSE'},{s:'600941',n:'中国移动',e:'SSE'},
-  {s:'601012',n:'隆基绿能',e:'SSE'},{s:'601166',n:'兴业银行',e:'SSE'},{s:'601318',n:'中国平安',e:'SSE'},
-  {s:'601328',n:'交通银行',e:'SSE'},{s:'601398',n:'工商银行',e:'SSE'},{s:'601628',n:'中国人寿',e:'SSE'},
-  {s:'601728',n:'中国电信',e:'SSE'},{s:'601857',n:'中国石油',e:'SSE'},{s:'601899',n:'紫金矿业',e:'SSE'},
-  {s:'601939',n:'建设银行',e:'SSE'},{s:'688981',n:'中芯国际',e:'SSE'},{s:'688041',n:'海光信息',e:'SSE'},
-  {s:'688256',n:'寒武纪',e:'SSE'},{s:'688012',n:'中微公司',e:'SSE'},{s:'688111',n:'金山办公',e:'SSE'},
-  {s:'002466',n:'天齐锂业',e:'SZSE'},{s:'002460',n:'赣锋锂业',e:'SZSE'},{s:'603259',n:'药明康德',e:'SSE'},
-  {s:'601088',n:'中国神华',e:'SSE'},{s:'600028',n:'中国石化',e:'SSE'},{s:'000625',n:'长安汽车',e:'SZSE'},
-  {s:'600104',n:'上汽集团',e:'SSE'},{s:'600745',n:'闻泰科技',e:'SSE'},{s:'601766',n:'中国中车',e:'SSE'},
+  {s:'601166',n:'兴业银行',e:'SSE'},{s:'601318',n:'中国平安',e:'SSE'},{s:'601398',n:'工商银行',e:'SSE'},
+  {s:'601857',n:'中国石油',e:'SSE'},{s:'601899',n:'紫金矿业',e:'SSE'},{s:'603259',n:'药明康德',e:'SSE'},
+  {s:'601088',n:'中国神华',e:'SSE'},{s:'000625',n:'长安汽车',e:'SZSE'},{s:'600745',n:'闻泰科技',e:'SSE'},
+  {s:'601766',n:'中国中车',e:'SSE'},{s:'002466',n:'天齐锂业',e:'SZSE'},{s:'002460',n:'赣锋锂业',e:'SZSE'},
 ];
+
+function secid(s) { return s.startsWith("6")||s.startsWith("9") ? "1."+s : "0."+s; }
+function yahooSym(s) { return s.startsWith("6") ? s+".SS" : s+".SZ"; }
+function emResp(data) { return new Response(JSON.stringify(data), {headers:{"Content-Type":"application/json"}}); }
+function railFetch(url,method,headers,body) { return fetch("https://web-production-74b0a.up.railway.app"+url.pathname+url.search, {method:method, headers:headers, body:body}); }
 
 export async function onRequest(context) {
   const url = new URL(context.request.url);
   const path = url.pathname;
-  const search = url.search;
   const method = context.request.method;
-  const railwayUrl = "https://web-production-74b0a.up.railway.app" + path + search;
-  const proxyToRailway = function() { return fetch(railwayUrl, {method:method, headers:context.request.headers, body:context.request.body}); };
+  const hdrs = context.request.headers;
+  const body = context.request.body;
+  const rail = function() { return railFetch(url,method,hdrs,body); };
 
-  // Quote: use Yahoo Finance (accessible everywhere)
+  // === QUOTE: East Money (A-Share accurate) + Yahoo fallback ===
   const qm = path.match(/\/api\/v1\/stocks\/(\d+)\/quote$/);
   if (qm) {
+    const sym = qm[1]; const sid = secid(sym);
     try {
-      const sym = qm[1];
-      const yahooSym = sym.startsWith("6") ? sym + ".SS" : sym + ".SZ";
-      const yh = await fetch("https://query1.finance.yahoo.com/v8/finance/chart/" + yahooSym + "?interval=1d&range=5d", {headers:{"User-Agent":"Mozilla/5.0"}});
-      const yj = await yh.json();
-      const r = yj.chart.result[0];
-      const m = r.meta;
-      const close = m.regularMarketPrice;
-      const prevClose = m.chartPreviousClose;
-      const change = close - prevClose;
-      const pct = (change / prevClose) * 100;
-      return new Response(JSON.stringify({code:0,message:"success",data:{symbol:sym,name:m.symbol||sym,market:"A",price:close,change:change,pct_change:pct,volume:m.regularMarketVolume||0,amount:0,timestamp:new Date().toISOString(),source:"yahoo"}}),{headers:{"Content-Type":"application/json"}});
-    } catch(e) { return proxyToRailway(); }
+      const r = await fetch("https://push2.eastmoney.com/api/qt/stock/get?secid="+sid+"&fields=f43,f44,f45,f46,f47,f48,f169,f170,f57,f58", {headers:{"User-Agent":"Mozilla/5.0"}});
+      const j = await r.json(); const d = j.data || {};
+      if (d.f43) {
+        return emResp({code:0,message:"success",data:{symbol:sym,name:d.f58||sym,market:"A",
+          price:d.f43/100,change:d.f169/100,pct_change:d.f170/100,volume:d.f47||0,amount:d.f48||0,
+          timestamp:new Date().toISOString(),source:"eastmoney"}});
+      }
+    } catch(e) {}
+    // Fallback: Yahoo Finance
+    try {
+      const r = await fetch("https://query1.finance.yahoo.com/v8/finance/chart/"+yahooSym(sym)+"?interval=1d&range=5d", {headers:{"User-Agent":"Mozilla/5.0"}});
+      const j = await r.json(); const m = j.chart.result[0].meta;
+      const close = m.regularMarketPrice, prev = m.chartPreviousClose;
+      return emResp({code:0,message:"success",data:{symbol:sym,name:m.symbol||sym,market:"A",
+        price:close,change:close-prev,pct_change:(close-prev)/prev*100,volume:m.regularMarketVolume||0,amount:0,
+        timestamp:new Date().toISOString(),source:"yahoo"}});
+    } catch(e) { return rail(); }
   }
 
-
-  // Kline: use Yahoo Finance
+  // === KLINE: East Money + Yahoo fallback ===
   const km = path.match(/\/api\/v1\/stocks\/(\d+)\/kline$/);
   if (km) {
+    const sym = km[1]; const sid = secid(sym);
+    var sd = url.searchParams.get("start_date")||""; var ed = url.searchParams.get("end_date")||"";
     try {
-      const sym = km[1];
-      const yahooSym = sym.startsWith("6") ? sym + ".SS" : sym + ".SZ";
-      var sd = url.searchParams.get("start_date") || "";
-      var ed = url.searchParams.get("end_date") || "";
-      var range = "3mo";
-      if (sd) { var days = (new Date(ed||new Date()) - new Date(sd)) / 86400000; if (days <= 31) range="1mo"; else if (days <= 62) range="2mo"; else if (days <= 93) range="3mo"; else if (days <= 183) range="6mo"; else range="1y"; }
-      var yh = await fetch("https://query1.finance.yahoo.com/v8/finance/chart/" + yahooSym + "?interval=1d&range=" + range, {headers:{"User-Agent":"Mozilla/5.0"}});
-      var yj = await yh.json();
-      var r = yj.chart.result[0];
-      var timestamps = r.timestamp || [];
-      var quotes = r.indicators.quote[0];
-      var result = [];
-      for (var i = 0; i < timestamps.length; i++) {
-        var dt = new Date(timestamps[i] * 1000);
-        var ds = dt.getFullYear() + "-" + String(dt.getMonth()+1).padStart(2,"0") + "-" + String(dt.getDate()).padStart(2,"0");
-        var o = quotes.open[i], h = quotes.high[i], l = quotes.low[i], c = quotes.close[i], v = quotes.volume[i];
-        if (o && c) {
-          result.push({trade_date:ds, open_price:o, high_price:h, low_price:l, close_price:c, volume:v||0, amount:(v||0)*o});
+      var r = await fetch("https://push2.eastmoney.com/api/qt/stock/kline/get?secid="+sid+"&klt=101&fqt=1&beg="+sd.replace(/-/g,"")+"&end="+(ed?ed.replace(/-/g,""):""), {headers:{"User-Agent":"Mozilla/5.0"}});
+      var j = await r.json(); var raw = (j.data||{}).klines||[];
+      if (raw.length > 0) {
+        var result = [];
+        for (var i=0;i<raw.length;i++) {
+          var p=raw[i].split(","); if(p.length<7) continue;
+          result.push({trade_date:p[0],open_price:parseFloat(p[1]),close_price:parseFloat(p[2]),high_price:parseFloat(p[3]),low_price:parseFloat(p[4]),volume:parseInt(p[5]),amount:parseFloat(p[6])});
         }
+        if (result.length > 0) return emResp({code:0,message:"success",data:result});
       }
-      if (result.length > 0) return new Response(JSON.stringify({code:0,message:"success",data:result}),{headers:{"Content-Type":"application/json"}});
     } catch(e) {}
-    return proxyToRailway();
-  }
-  // Search: filter from stock list
-  if (path === "/api/v1/stocks/search") {
+    // Fallback: Yahoo Finance for kline
     try {
-      const kw = (url.searchParams.get("keyword") || "").toLowerCase();
-      const result = [];
-      for (var i = 0; i < STOCKS.length; i++) {
-        var s = STOCKS[i];
-        if (s.s.toLowerCase().includes(kw) || s.n.toLowerCase().includes(kw)) {
-          result.push({symbol:s.s,name:s.n,market:"A",exchange:s.e,industry:""});
-          if (result.length >= 20) break;
-        }
+      var range="3mo";
+      if(sd){var days=(new Date(ed||new Date())-new Date(sd))/86400000; range=days<=31?"1mo":days<=93?"3mo":days<=183?"6mo":"1y";}
+      var r=await fetch("https://query1.finance.yahoo.com/v8/finance/chart/"+yahooSym(sym)+"?interval=1d&range="+range,{headers:{"User-Agent":"Mozilla/5.0"}});
+      var j=await r.json(); var res=j.chart.result[0]; var ts=res.timestamp||[]; var q=res.indicators.quote[0]; var result=[];
+      for(var i=0;i<ts.length;i++){
+        var dt=new Date(ts[i]*1000); var ds=dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0')+'-'+String(dt.getDate()).padStart(2,'0');
+        if(q.open[i]&&q.close[i]) result.push({trade_date:ds,open_price:q.open[i],high_price:q.high[i],low_price:q.low[i],close_price:q.close[i],volume:q.volume[i]||0,amount:(q.volume[i]||0)*q.open[i]});
       }
-      if (result.length > 0) return new Response(JSON.stringify({code:0,message:"success",data:result}),{headers:{"Content-Type":"application/json"}});
-    } catch(e) {}
-    return proxyToRailway();
+      if(result.length>0) return emResp({code:0,message:"success",data:result});
+    } catch(e){}
+    return rail();
   }
 
-  return proxyToRailway();
+  // === SEARCH: embedded stock list ===
+  if (path === "/api/v1/stocks/search") {
+    try {
+      const kw = (url.searchParams.get("keyword")||"").toLowerCase();
+      const result = [];
+      for (var i=0;i<STOCKS.length;i++) {
+        var s=STOCKS[i]; if(s.s.toLowerCase().includes(kw)||s.n.toLowerCase().includes(kw)) {
+          result.push({symbol:s.s,name:s.n,market:"A",exchange:s.e,industry:""});
+          if(result.length>=20) break;
+        }
+      }
+      if(result.length>0) return emResp({code:0,message:"success",data:result});
+    } catch(e){}
+    return rail();
+  }
+
+  return rail();
 }
