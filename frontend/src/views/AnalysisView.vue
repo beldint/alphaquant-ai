@@ -312,7 +312,7 @@ const modelHint = computed(function() {
 
 function onModelChange(v) {
   if (v === '__custom__') { aiModel.value = '__custom__'; }
-  else { aiModel.value = v; aiCustom.value = ''; if (!aiBaseUrl.value) { var u = getProviderUrl(v); if (u) aiBaseUrl.value = u; } }
+  else { aiModel.value = v; aiCustom.value = ''; var u = getProviderUrl(v); if (u) aiBaseUrl.value = u; }
 }
   var url = URL.createObjectURL(blob);
   var a = document.createElement("a");
