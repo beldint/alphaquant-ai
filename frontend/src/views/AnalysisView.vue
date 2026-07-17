@@ -310,6 +310,18 @@ const modelHint = computed(function() {
   return '';
 });
 
+function clearConfig() {
+  localStorage.removeItem('ai_model');
+  localStorage.removeItem('ai_base_url');
+  localStorage.removeItem('ai_api_key');
+  localStorage.removeItem('ai_custom');
+  aiModel.value = '';
+  aiBaseUrl.value = '';
+  aiApiKey.value = '';
+  aiCustom.value = '';
+  message.success('已清除已保存的 AI 配置');
+}
+
 function onModelChange(v) {
   if (v === '__custom__') { aiModel.value = '__custom__'; }
   else { aiModel.value = v; aiCustom.value = ''; var u = getProviderUrl(v); if (u) aiBaseUrl.value = u; }
