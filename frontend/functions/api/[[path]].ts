@@ -30,7 +30,7 @@ export async function onRequest(context) {
   const url = new URL(context.request.url);
   // Serve static assets directly - don't proxy to Railway
   if (!url.pathname.startsWith('/api/')) {
-    return context.next();
+    try { return await context.env.ASSETS.fetch(context.request); } catch(e) { return new Response(null, {status:404}); }
   }
   const path = url.pathname;
   const method = context.request.method;
