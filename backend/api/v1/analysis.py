@@ -48,48 +48,89 @@ async def download_analysis(
 ):
     from backend.services.analysis_service import analysis_service
     result = await analysis_service.analyze_stock(symbol, market=market, lookback_days=lookback_days)
-    import os, io
+
+    import os, io, logging
+    logger = logging.getLogger(__name__)
+    filename = f"analysis_{symbol}_{market}_{lookback_days}d"
+
+    if format == "md":
+        return Response(
+            content=result.report_markdown,
+            media_type="text/markdown",
+            headers={"Content-Disposition": f'attachment; filename="{filename}.md"''}'
+        )
+
     try:
         from fpdf import FPDF
         pdf = FPDF()
-        pdf.add_page()
         pdf.set_auto_page_break(auto=True, margin=15)
-        pdf.add_font("DejaVu", "", os.path.join(os.path.dirname(__file__), "..", "..", "..", "fonts", "DejaVuSans.ttf"), uni=True)
-        pdf.add_font("DejaVu", "B", os.path.join(os.path.dirname(__file__), "..", "..", "..", "fonts", "DejaVuSans-Bold.ttf"), uni=True)
+        pdf.add_page()
+
+        font_paths = [
+            os.path.join("fonts", "NotoSansSC-Regular.ttf"),
+            os.path.join(os.path.dirname(__file__), "..", "..", "..", "fonts", "NotoSansSC-Regular.ttf"),
+        ]
+
+        noto_path = None
+        for fp in font_paths:
+            if os.path.exists(fp):
+                noto_path = fp
+                break
+
+        if not noto_path:
+            cache_dir = os.path.join(os.path.dirname(__file__), "..", "..", "..", "fonts")
+            os.makedirs(cache_dir, exist_ok=True)
+            noto_path = os.path.join(cache_dir, "NotoSansSC-Regular.ttf")
+            if not os.path.exists(noto_path):
+                try:
+                    import httpx
+                    url = "https://github.com/googlefonts/noto-cjk/releases/download/Sans2.004/03_NotoSansCJKsc.zip"
+                    logger.warning("Noto font not available, falling back to markdown")
+                    noto_path = None
+                except Exception:
+                    noto_path = None
+
+        if noto_path and os.path.exists(noto_path):
+            pdf.add_font("Noto", "", noto_path, uni=True)
+            font_name = "Noto"
+        else:
+            return Response(
+                content=result.report_markdown,
+                media_type="text/markdown",
+                headers={"Content-Disposition": f'attachment; filename="{filename}.md"''}'
+            )
+
         lines = result.report_markdown.split("\n")
         for line in lines:
             if line.startswith("### "):
-                pdf.set_font("DejaVu", "B", 12)
+                pdf.set_font(font_name, "B", 12)
                 pdf.cell(0, 8, line[4:], new_x="LMARGIN", new_y="NEXT")
             elif line.startswith("## "):
-                pdf.set_font("DejaVu", "B", 14)
+                pdf.set_font(font_name, "B", 14)
                 pdf.cell(0, 9, line[3:], new_x="LMARGIN", new_y="NEXT")
             elif line.startswith("# "):
-                pdf.set_font("DejaVu", "B", 16)
+                pdf.set_font(font_name, "B", 16)
                 pdf.cell(0, 10, line[2:], new_x="LMARGIN", new_y="NEXT")
-            elif line.startswith("---"):
-                pdf.cell(0, 5, "", new_x="LMARGIN", new_y="NEXT")
             elif line.strip().startswith("|"):
-                pdf.set_font("DejaVu", "", 8)
-                pdf.cell(0, 5, line.strip(), new_x="LMARGIN", new_y="NEXT")
+                pdf.set_font(font_name, "", 8)
+                pdf.cell(0, 5, line.strip()[:160] if len(line) > 160 else line.strip(), new_x="LMARGIN", new_y="NEXT")
             elif line.strip():
-                pdf.set_font("DejaVu", "", 10)
-                pdf.cell(0, 6, line[:120] if len(line) > 120 else line, new_x="LMARGIN", new_y="NEXT")
+                pdf.set_font(font_name, "", 10)
+                pdf.multi_cell(0, 6, line.strip())
             else:
                 pdf.cell(0, 4, "", new_x="LMARGIN", new_y="NEXT")
+
         buf = io.BytesIO()
         pdf.output(buf)
-        filename = f"analysis_{symbol}_{market}_{lookback_days}d.pdf"
         return Response(
             content=buf.getvalue(),
             media_type="application/pdf",
-            headers={"Content-Disposition": f"attachment; filename=\"{filename}\""}
+            headers={"Content-Disposition": f'attachment; filename="{filename}.pdf"''}'
         )
+
     except ImportError:
-        content = result.report_markdown
-        filename = f"analysis_{symbol}_{market}_{lookback_days}d.md"
         return Response(
-            content=content,
+            content=result.report_markdown,
             media_type="text/markdown",
-            headers={"Content-Disposition": f"attachment; filename=\"{filename}\""}
+            headers={"Content-Disposition": f'attachment; filename="{filename}.md"''}'
         )
