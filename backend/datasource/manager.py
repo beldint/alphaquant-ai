@@ -127,15 +127,9 @@ class StockProviderManager:
         Returns:
             Provider map.
         """
-        _p: dict[StockProviderName, StockProvider] = {}
-        try:
-            from backend.datasource.providers.eastmoney_provider import EastMoneyStockProvider
-            _p[StockProviderName.EASTMONEY] = EastMoneyStockProvider()
-        except Exception as _e:
-            import logging
-            logging.getLogger(__name__).warning("EastMoney provider init failed: %s", _e)
-        _p[StockProviderName.TUSHARE] = MockStockProvider()
-        return _p
+        return {
+            StockProviderName.TUSHARE: MockStockProvider(),
+        }
 
     async def _execute_with_failover(
         self,
