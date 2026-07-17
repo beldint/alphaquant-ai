@@ -22,6 +22,7 @@
 </template>
 <script setup lang="ts">
 import { ref, reactive } from "vue";
+import { NCard, NForm, NFormItem, NInput, NButton } from "naive-ui";
 import { useRouter } from "vue-router";
 import { useMessage } from "naive-ui";
 import { useAuthStore } from "../stores/auth";
