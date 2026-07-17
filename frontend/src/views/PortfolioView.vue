@@ -30,15 +30,32 @@
   </div>
 </template>
 <script setup lang="ts">
-import { ref, computed, reactive, h } from 'vue';
+import { ref, computed, reactive, h, watch } from 'vue';
 import { NButton, NDataTable, NModal, NForm, NFormItem, NInput, NInputNumber, NSpace, NCard, NGrid, NGridItem, NStatistic, NEmpty } from 'naive-ui';
 import type { DataTableColumn } from 'naive-ui';
 import { usePortfolioStore } from '../stores/portfolio';
+import { searchStocks } from '../api';
 import { useMessage } from 'naive-ui';
 const portfolioStore = usePortfolioStore();
 const message = useMessage();
 const showAdd = ref(false);
 const form = reactive({ symbol: '', name: '', quantity: 0, averageCost: 0 });
+let _nameTimer: any = null;
+watch(function() { return form.symbol; }, function(val) {
+  if (_nameTimer) clearTimeout(_nameTimer);
+  if (val && val.length >= 3) {
+    _nameTimer = setTimeout(async function() {
+      try {
+        _nameTimer = null;
+        var res = await searchStocks(val, 'A');
+        if (res && res.code === 0 && res.data) {
+          var match = res.data.find(function(s) { return s.symbol === val; });
+          if (match) form.name = match.name;
+        }
+      } catch(e) {}
+    }, 500);
+  }
+});
 
 const totalValue = computed(function() {
   return portfolioStore.holdings.reduce(function(s, h) { return s + h.marketValue; }, 0);
