@@ -31,7 +31,8 @@ engine: AsyncEngine = create_async_engine(
     max_overflow=settings.database_max_overflow,
     pool_timeout=settings.database_pool_timeout_seconds,
     pool_recycle=settings.database_pool_recycle_seconds,
-    future=True,
+    poolclass=None,
+    connect_args={"check_same_thread": False, "uri": True},
 )
 
 AsyncSessionFactory = async_sessionmaker(
