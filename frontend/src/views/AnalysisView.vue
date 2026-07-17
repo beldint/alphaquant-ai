@@ -67,14 +67,96 @@ const aiApiKey = ref(localStorage.getItem('ai_api_key') || '');
 const showAiConfig = ref(!!localStorage.getItem('ai_model') || !!localStorage.getItem('ai_base_url') || !!localStorage.getItem('ai_api_key'));
 const aiCustom = ref('');
 const modelOptions = [
-  { label: 'DeepSeek Chat', value: 'deepseek-chat' },
-  { label: 'DeepSeek Reasoner', value: 'deepseek-reasoner' },
-  { label: 'GPT-4o', value: 'gpt-4o' },
-  { label: 'GPT-4o-mini', value: 'gpt-4o-mini' },
-  { label: 'Claude 3.5 Sonnet', value: 'claude-3-5-sonnet-20241022' },
-  { label: 'Qwen Max', value: 'qwen-max' },
-  { label: 'Qwen Plus', value: 'qwen-plus' },
-  { label: '自定义', value: '__custom__' },
+  { type: 'group', label: 'DeepSeek', key: 'deepseek', options: [
+    { label: 'DeepSeek Chat', value: 'deepseek-chat' },
+    { label: 'DeepSeek Reasoner', value: 'deepseek-reasoner' },
+    { label: 'DeepSeek V3', value: 'deepseek-chat' },
+    { label: 'DeepSeek R1', value: 'deepseek-reasoner' },
+  ]},
+  { type: 'group', label: 'OpenAI', key: 'openai', options: [
+    { label: 'GPT-4o', value: 'gpt-4o' },
+    { label: 'GPT-4o mini', value: 'gpt-4o-mini' },
+    { label: 'GPT-4 Turbo', value: 'gpt-4-turbo' },
+    { label: 'GPT-4', value: 'gpt-4' },
+    { label: 'GPT-3.5 Turbo', value: 'gpt-3.5-turbo' },
+    { label: 'o1', value: 'o1' },
+    { label: 'o1-mini', value: 'o1-mini' },
+    { label: 'o3-mini', value: 'o3-mini' },
+  ]},
+  { type: 'group', label: 'Anthropic Claude', key: 'claude', options: [
+    { label: 'Claude 3.5 Sonnet', value: 'claude-3-5-sonnet-20241022' },
+    { label: 'Claude 3.5 Haiku', value: 'claude-3-5-haiku-20241022' },
+    { label: 'Claude 3 Opus', value: 'claude-3-opus-20240229' },
+    { label: 'Claude 3 Sonnet', value: 'claude-3-sonnet-20240229' },
+    { label: 'Claude 3 Haiku', value: 'claude-3-haiku-20240307' },
+  ]},
+  { type: 'group', label: 'Google Gemini', key: 'gemini', options: [
+    { label: 'Gemini 2.0 Flash', value: 'gemini-2.0-flash' },
+    { label: 'Gemini 1.5 Pro', value: 'gemini-1.5-pro' },
+    { label: 'Gemini 1.5 Flash', value: 'gemini-1.5-flash' },
+    { label: 'Gemini 1.0 Pro', value: 'gemini-1.0-pro' },
+  ]},
+  { type: 'group', label: '阿里通义千问 (Qwen)', key: 'qwen', options: [
+    { label: 'Qwen Max', value: 'qwen-max' },
+    { label: 'Qwen Plus', value: 'qwen-plus' },
+    { label: 'Qwen Turbo', value: 'qwen-turbo' },
+    { label: 'Qwen Long', value: 'qwen-long' },
+    { label: 'QwQ (Reasoning)', value: 'qwq-32b' },
+  ]},
+  { type: 'group', label: '月之暗面 Kimi', key: 'kimi', options: [
+    { label: 'Moonshot v1 8K', value: 'moonshot-v1-8k' },
+    { label: 'Moonshot v1 32K', value: 'moonshot-v1-32k' },
+    { label: 'Moonshot v1 128K', value: 'moonshot-v1-128k' },
+  ]},
+  { type: 'group', label: '字节豆包 (Doubao)', key: 'doubao', options: [
+    { label: 'Doubao Pro 32K', value: 'doubao-pro-32k' },
+    { label: 'Doubao Pro 128K', value: 'doubao-pro-128k' },
+    { label: 'Doubao Lite 32K', value: 'doubao-lite-32k' },
+    { label: 'Doubao Lite 128K', value: 'doubao-lite-128k' },
+  ]},
+  { type: 'group', label: '百度文心 (ERNIE)', key: 'ernie', options: [
+    { label: 'ERNIE 4.0', value: 'ernie-4.0' },
+    { label: 'ERNIE 3.5', value: 'ernie-3.5' },
+    { label: 'ERNIE Speed', value: 'ernie-speed' },
+    { label: 'ERNIE Lite', value: 'ernie-lite' },
+  ]},
+  { type: 'group', label: '智谱 GLM (Zhipu)', key: 'glm', options: [
+    { label: 'GLM-4', value: 'glm-4' },
+    { label: 'GLM-4 Plus', value: 'glm-4-plus' },
+    { label: 'GLM-4 Air', value: 'glm-4-air' },
+    { label: 'GLM-4 Flash', value: 'glm-4-flash' },
+  ]},
+  { type: 'group', label: 'Meta Llama', key: 'llama', options: [
+    { label: 'Llama 3.1 405B', value: 'llama-3.1-405b' },
+    { label: 'Llama 3.1 70B', value: 'llama-3.1-70b' },
+    { label: 'Llama 3.1 8B', value: 'llama-3.1-8b' },
+    { label: 'Llama 3 70B', value: 'llama-3-70b' },
+    { label: 'Llama 3 8B', value: 'llama-3-8b' },
+  ]},
+  { type: 'group', label: 'Mistral AI', key: 'mistral', options: [
+    { label: 'Mistral Large', value: 'mistral-large-latest' },
+    { label: 'Mistral Small', value: 'mistral-small-latest' },
+    { label: 'Mixtral 8x7B', value: 'mixtral-8x7b' },
+    { label: 'Mistral Nemo', value: 'mistral-nemo' },
+  ]},
+  { type: 'group', label: 'Groq', key: 'groq', options: [
+    { label: 'Llama 3 (Groq)', value: 'llama3-70b-8192' },
+    { label: 'Mixtral (Groq)', value: 'mixtral-8x7b-32768' },
+    { label: 'Gemma2 (Groq)', value: 'gemma2-9b-it' },
+  ]},
+  { type: 'group', label: 'Together AI', key: 'together', options: [
+    { label: 'Llama 3.1 (Together)', value: 'meta-llama/Meta-Llama-3.1-70B-Instruct-Turbo' },
+    { label: 'Mixtral (Together)', value: 'mistralai/Mixtral-8x22B-Instruct-v0.1' },
+  ]},
+  { type: 'group', label: 'DeepInfra', key: 'deepinfra', options: [
+    { label: 'Llama 3.1 (DeepInfra)', value: 'meta-llama/Meta-Llama-3.1-70B-Instruct' },
+    { label: 'Qwen2 (DeepInfra)', value: 'Qwen/Qwen2-72B-Instruct' },
+  ]},
+  { type: 'group', label: 'Fireworks AI', key: 'fireworks', options: [
+    { label: 'Llama 3.1 (Fireworks)', value: 'llama-v3p1-70b-instruct' },
+    { label: 'Mixtral (Fireworks)', value: 'mixtral-8x22b-instruct' },
+  ]},
+  { label: '-- 自定义模型 --', value: '__custom__' },
 ];
 const loading = ref(false);
 const klineData = ref<any[]>([]);
