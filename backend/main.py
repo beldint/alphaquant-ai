@@ -16,6 +16,7 @@ from loguru import logger
 
 from backend.api.v1.router import api_router
 from backend.cache.redis_client import redis_cache
+from backend.database.base import Base
 from backend.core.config import settings
 from backend.core.exception_handlers import register_exception_handlers
 from backend.core.logging import setup_logging
@@ -35,6 +36,18 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     """
     setup_logging(settings)
     logger.info("Starting {app_name} {version}", app_name=settings.app_name, version=settings.app_version)
+    try:
+        import backend.models.stock
+        import backend.models.user
+        import backend.models.analysis
+        import backend.models.portfolio
+        import backend.models.watchlist
+        from backend.database.session import engine
+        async with engine.begin() as conn:
+            await conn.run_sync(Base.metadata.create_all)
+        logger.info("Database tables auto-created")
+    except Exception as exc:
+        logger.warning("Table creation failed: {error}", error=str(exc))
     yield
     logger.info("Stopping {app_name}", app_name=settings.app_name)
     try:
