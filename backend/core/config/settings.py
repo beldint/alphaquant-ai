@@ -292,14 +292,7 @@ class StockDataSettings(BaseAppSettings):
     stock_default_market: Literal["A", "HK", "US"] = Field(default="A")
     stock_default_provider: StockProviderName = Field(default=StockProviderName.AKSHARE)
     stock_provider_priority: Any = Field(
-        default_factory=lambda: [
-            StockProviderName.AKSHARE,
-            StockProviderName.EASTMONEY,
-            StockProviderName.SINA,
-            StockProviderName.TENCENT,
-            StockProviderName.TUSHARE,
-            StockProviderName.BAOSTOCK,
-        ],
+        default_factory=lambda: [StockProviderName.TUSHARE],
     )
     stock_request_timeout_seconds: float = Field(default=5.0, gt=0)
     stock_max_retries: int = Field(default=0, ge=0, le=10)
