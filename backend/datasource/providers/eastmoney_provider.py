@@ -96,7 +96,12 @@ class EastMoneyStockProvider(StockProvider):
     async def get_realtime_quote(self, symbol: str, market: Market = 'A') -> RealtimeQuote:
         params = {'secid': _secid(symbol), 'fields': EM_QUOTE_FIELDS}
         resp = await self._http.get(EM_QUOTE_URL, params=params)
-        data = (resp.json()).get('data') or {}
+        data_raw = resp.json()
+        data = data_raw.get('data') or {}
+        if not data or not data.get('f43'):
+            yq = await self._yahoo_quote(symbol, market)
+            if yq:
+                return yq
         name = str(data.get('f58', symbol))
         price = self._p(data.get('f43'))
         high = self._p(data.get('f44'))
