@@ -1,6 +1,6 @@
 <template>
   <div>
-    <div class="page-header flex-between"><h2>投资组合</h2><n-button type="primary" ghost @click="showAdd = true">添加持仓</n-button></div>
+    <div class="page-header flex-between"><h2>投资组合</h2><n-space><n-button :loading="refreshing" ghost @click="refreshPrices">刷新行情</n-button><n-button type="primary" ghost @click="showAdd = true">添加持仓</n-button></n-space></div>
 
     <!-- Add/Edit Dialog -->
     <n-modal v-model:show="showAdd" title="添加持仓" preset="card" style="width:420px">
@@ -39,6 +39,30 @@ import { useMessage } from 'naive-ui';
 const portfolioStore = usePortfolioStore();
 const message = useMessage();
 const showAdd = ref(false);
+const refreshing = ref(false);
+
+async function refreshPrices() {
+  refreshing.value = true;
+  var holdingsList = portfolioStore.holdings;
+  if (!holdingsList.length) { refreshing.value = false; return; }
+  var total = holdingsList.length;
+  var done = 0;
+  for (var i = 0; i < total; i++) {
+    var h = holdingsList[i];
+    try {
+      var res = await (await import("../api")).getQuote(h.symbol, "A");
+      if (res && res.code === 0 && res.data) {
+        var price = Number(res.data.price);
+        if (price > 0) {
+          h.marketValue = h.quantity * price;
+          h.pnl = h.marketValue - h.quantity * h.averageCost;
+        }
+      }
+    } catch(e) {}
+    done++;
+  }
+  refreshing.value = false;
+}
 const form = reactive({ symbol: '', name: '', quantity: 0, averageCost: 0 });
 let _nameTimer: any = null;
 watch(function() { return form.symbol; }, function(val) {
@@ -64,6 +88,14 @@ const totalPnl = computed(function() {
   return portfolioStore.holdings.reduce(function(s, h) { return s + h.pnl; }, 0);
 });
 
+function editHolding(row: any) {
+  form.symbol = row.symbol;
+  form.name = row.name;
+  form.quantity = row.quantity;
+  form.averageCost = row.averageCost;
+  showAdd.value = true;
+}
+
 function saveHolding() {
   if (!form.symbol.trim() || !form.name.trim() || form.quantity <= 0 || form.averageCost <= 0) {
     message.warning("请填写完整信息");
@@ -83,14 +115,21 @@ function saveHolding() {
 }
 
 const columns: DataTableColumn<any>[] = [
-  { title: '代码', key: 'symbol', width: 100 },
-  { title: '名称', key: 'name', width: 140 },
-  { title: '持仓', key: 'quantity', width: 100 },
-  { title: '成本价', key: 'averageCost', width: 100 },
-  { title: '市值', key: 'marketValue', width: 120, render: function(row) { return row.marketValue.toFixed(2); } },
-  { title: '盈亏', key: 'pnl', width: 120, render: function(row) { return row.pnl.toFixed(2); } },
-  { title: '操作', width: 100, render: function(row) {
-    return h(NButton, { size: "tiny", quaternary: true, onClick: function() { portfolioStore.remove(row.symbol); } }, function() { return "删除"; });
+  { title: '代码', key: 'symbol', width: 90, sortable: true },
+  { title: '名称', key: 'name', width: 130, ellipsis: true },
+  { title: '持仓', key: 'quantity', width: 70, sortable: true },
+  { title: '成本价', key: 'averageCost', width: 90 },
+  { title: '现价', key: 'currentPrice', width: 80, render: function(row) { var p = row.marketValue && row.quantity ? (row.marketValue / row.quantity).toFixed(2) : '-'; return p; } },
+  { title: '市值', key: 'marketValue', width: 100, sortable: true, render: function(row) { return row.marketValue.toFixed(2); } },
+  { title: '盈亏', key: 'pnl', width: 140, sortable: true, render: function(row) {
+    var pct = row.averageCost > 0 ? (row.pnl / (row.quantity * row.averageCost) * 100) : 0;
+    return h('span', { style: { color: row.pnl >= 0 ? 'var(--up-color)' : 'var(--down-color)' } }, row.pnl.toFixed(2) + ' (' + pct.toFixed(2) + '%)');
+  } },
+  { title: '操作', width: 120, render: function(row) {
+    return h('span', null, [
+      h(NButton, { size: 'tiny', quaternary: true, onClick: function() { editHolding(row); } }, function() { return '编辑'; }),
+      h(NButton, { size: 'tiny', quaternary: true, style: { color: 'red' }, onClick: function() { portfolioStore.remove(row.symbol); } }, function() { return '删除'; }),
+    ]);
   } },
 ];
 </script>
