@@ -31,6 +31,22 @@ class StockAnalysisRequest(ORMModel):
     api_key: str | None = Field(default=None)
 
 
+class StockScoreResponse(ORMModel):
+    """Stock score response schema."""
+    symbol: str
+    name: str
+    total_score: float
+    tech_score: float
+    volume_score: float
+    fundamental_score: float
+    valuation_score: float
+    sentiment_score: float
+    summary: str
+    strengths: list[str] = []
+    risks: list[str] = []
+    suggestion: str
+
+
 class StockAnalysisResponse(ORMModel):
     """Response schema for AI stock analysis."""
 
