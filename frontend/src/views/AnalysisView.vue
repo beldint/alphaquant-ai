@@ -267,6 +267,36 @@ const providerUrls: Record<string, string> = {
   mistral: 'https://api.mistral.ai/v1',
   llama: '',
 };
+watch(aiModel, function(val) {
+  if (val && val !== '__custom__') {
+    if (val.indexOf('deepseek') >= 0) aiBaseUrl.value = 'https://api.deepseek.com/v1';
+    else if (val.indexOf('gpt-') >= 0 || val.indexOf('o1') >= 0 || val.indexOf('o3') >= 0 || val.indexOf('o4') >= 0) aiBaseUrl.value = 'https://api.openai.com/v1';
+    else if (val.indexOf('claude') >= 0) aiBaseUrl.value = 'https://api.anthropic.com/v1';
+    else if (val.indexOf('gemini') >= 0) aiBaseUrl.value = 'https://generativelanguage.googleapis.com/v1beta';
+    else if (val.indexOf('qwen') >= 0 || val.indexOf('qwq') >= 0) aiBaseUrl.value = 'https://dashscope.aliyuncs.com/compatible-mode/v1';
+    else if (val.indexOf('moonshot') >= 0 || val.indexOf('kimi') >= 0) aiBaseUrl.value = 'https://api.moonshot.cn/v1';
+    else if (val.indexOf('doubao') >= 0) aiBaseUrl.value = 'https://ark.cn-beijing.volces.com/api/v3';
+    else if (val.indexOf('ernie') >= 0) aiBaseUrl.value = 'https://aip.baidubce.com/rpc/2.0/ai_custom/v1/wenxinworkshop/chat';
+    else if (val.indexOf('glm') >= 0 || val.indexOf('codegeex') >= 0) aiBaseUrl.value = 'https://open.bigmodel.cn/api/paas/v4';
+    else if (val.indexOf('yi-') >= 0) aiBaseUrl.value = 'https://api.lingyiwanwu.com/v1';
+    else if (val.indexOf('baichuan') >= 0) aiBaseUrl.value = 'https://api.baichuan-ai.com/v1';
+    else if (val.indexOf('minimax') >= 0) aiBaseUrl.value = 'https://api.minimax.chat/v1';
+    else if (val.indexOf('mistral') >= 0 || val.indexOf('mixtral') >= 0) aiBaseUrl.value = 'https://api.mistral.ai/v1';
+    else if (val.indexOf('groq') >= 0) aiBaseUrl.value = 'https://api.groq.com/openai/v1';
+    else if (val.indexOf('together') >= 0) aiBaseUrl.value = 'https://api.together.xyz/v1';
+    else if (val.indexOf('deepinfra') >= 0) aiBaseUrl.value = 'https://api.deepinfra.com/v1/openai';
+    else if (val.indexOf('fireworks') >= 0) aiBaseUrl.value = 'https://api.fireworks.ai/inference/v1';
+    else if (val.indexOf('reka') >= 0) aiBaseUrl.value = 'https://api.reka.ai/v1';
+    else if (val.indexOf('vllm') >= 0) aiBaseUrl.value = 'http://localhost:8000/v1';
+    else if (val.indexOf('lm-studio') >= 0) aiBaseUrl.value = 'http://localhost:1234/v1';
+    else if (val.indexOf('localai') >= 0 || val.indexOf('llama-cpp') >= 0) aiBaseUrl.value = 'http://localhost:8080/v1';
+    else if (val.indexOf('oobabooga') >= 0) aiBaseUrl.value = 'http://localhost:5000/v1';
+    else if (val.indexOf('xinference') >= 0) aiBaseUrl.value = 'http://localhost:9997/v1';
+    else if (val.indexOf('jan-') >= 0) aiBaseUrl.value = 'http://localhost:1337/v1';
+    else if (val.indexOf('llama') >= 0) aiBaseUrl.value = '';
+    else aiBaseUrl.value = 'http://localhost:11434/v1';
+  }
+});
 function getProviderKey(val: string): string | null {
   for (var g of modelOptions) {
     if (g.type === "group" && g.children) {
@@ -330,13 +360,6 @@ function clearConfig() {
   aiCustom.value = '';
   message.success('已清除已保存的 AI 配置');
 }
-
-watch(aiModel, function(val) {
-  if (val && val !== '__custom__') {
-    var u = getProviderUrl(val);
-    if (u) aiBaseUrl.value = u;
-  }
-});
 
 function onModelChange(v) {
   if (v === '__custom__') { aiModel.value = '__custom__'; }
