@@ -13,11 +13,11 @@
     <n-grid :cols="4" :x-gap="16" class="mb-24" v-if="quote">
       <n-grid-item><n-statistic label="最新价" :value="quote.price" :tabular-nums="true" /></n-grid-item>
       <n-grid-item><n-statistic label="涨跌额" :value="quote.change" :tabular-nums="true" :style="quote.change >= 0 ? 'color:var(--up-color)' : 'color:var(--down-color)'" /></n-grid-item>
-      <n-grid-item><n-statistic label="涨跌幅" :value="`${quote.pct_change}%`" :tabular-nums="true" :style="quote.pct_change >= 0 ? 'color:var(--up-color)' : 'color:var(--down-color)'" /></n-grid-item>
+      <n-grid-item><n-statistic label="涨跌幅" :value="${quote.pct_change}%" :tabular-nums="true" :style="quote.pct_change >= 0 ? 'color:var(--up-color)' : 'color:var(--down-color)'" /></n-grid-item>
       <n-grid-item><n-statistic label="成交量" :value="formatVolume(quote.volume)" :tabular-nums="true" /></n-grid-item>
     </n-grid>
     <n-card size="small" class="mb-24">
-      <n-tabs type="line" :value="klinePeriod" @update:value="(v: string) => switchPeriod(v)">
+      <n-tabs type="line" :value="klinePeriod" @update:value="(v) => switchPeriod(v)">
         <n-tab-pane name="1M" tab="近1月"><KLineChart :data="klineData" /></n-tab-pane>
         <n-tab-pane name="3M" tab="近3月"><KLineChart :data="klineData" /></n-tab-pane>
         <n-tab-pane name="6M" tab="近6月"><KLineChart :data="klineData" /></n-tab-pane>
@@ -49,8 +49,8 @@ async function downloadReport() {
   const url = window.location.origin + '/api/v1/analysis/download?symbol=' + symbol.value + '&market=A&lookback_days=120';
   window.open(url, '_blank');
 }
-function formatVolume(v: number) { if (v >= 1e8) return (v / 1e8).toFixed(2) + '亿'; if (v >= 1e4) return (v / 1e4).toFixed(2) + '万'; return v.toFixed(0); }
-function switchPeriod(p: string) {
+function formatVolume(v) { if (v >= 1e8) return (v / 1e8).toFixed(2) + '亿'; if (v >= 1e4) return (v / 1e4).toFixed(2) + '万'; return v.toFixed(0); }
+function switchPeriod(p) {
   klinePeriod.value = p;
   const days = p === '1M' ? 30 : p === '3M' ? 90 : 180;
   const end = new Date().toISOString().slice(0, 10);
