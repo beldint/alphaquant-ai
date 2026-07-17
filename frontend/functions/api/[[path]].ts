@@ -28,6 +28,10 @@ function railFetch(url,method,headers,body) { return fetch("https://web-producti
 
 export async function onRequest(context) {
   const url = new URL(context.request.url);
+  // Serve static assets directly - don't proxy to Railway
+  if (!url.pathname.startsWith('/api/')) {
+    return context.next();
+  }
   const path = url.pathname;
   const method = context.request.method;
   const hdrs = context.request.headers;
