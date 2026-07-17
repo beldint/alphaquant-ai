@@ -20,7 +20,11 @@
       <n-collapse class="mt-12" :expanded-names="showAiConfig ? ['ai'] : []" @update:expanded-names="function(v) { showAiConfig = v.length > 0; }">
         <n-collapse-item title="AI 模型配置" name="ai">
           <n-grid :cols="3" :x-gap="12">
-            <n-grid-item><n-input v-model:value="aiModel" placeholder="模型名 (如 deepseek-chat)" size="small" /></n-grid-item>
+            <n-grid-item>
+              <n-select v-model:value="aiModel" :options="modelOptions" placeholder="选择模型" size="small"
+                :filterable="true" :tag="true" @update:value="function(v) { if (v === '__custom__') aiModel = aiCustom || ''; else aiCustom = ''; }" />
+              <n-input v-if="aiModel === '__custom__'" v-model:value="aiCustom" placeholder="输入自定义模型名" size="small" class="mt-6" />
+            </n-grid-item>
             <n-grid-item><n-input v-model:value="aiBaseUrl" placeholder="API 地址 (如 https://api.deepseek.com/v1)" size="small" /></n-grid-item>
             <n-grid-item><n-input v-model:value="aiApiKey" type="password" placeholder="API Key" show-password-on="click" size="small" /></n-grid-item>
           </n-grid>
@@ -51,7 +55,7 @@ import { useRoute } from 'vue-router';
 import { useStockStore } from '../stores/stock';
 import TechnicalIndicators from '../components/TechnicalIndicators.vue';
 import AnalysisReport from '../components/AnalysisReport.vue';
-import { NCollapse, NCollapseItem } from 'naive-ui';
+import { NCollapse, NCollapseItem, NSelect } from 'naive-ui';
 const route = useRoute();
 const stockStore = useStockStore();
 const symbol = ref(route.query.symbol as string || '000001');
@@ -61,6 +65,17 @@ const aiModel = ref(localStorage.getItem('ai_model') || '');
 const aiBaseUrl = ref(localStorage.getItem('ai_base_url') || '');
 const aiApiKey = ref(localStorage.getItem('ai_api_key') || '');
 const showAiConfig = ref(!!localStorage.getItem('ai_model') || !!localStorage.getItem('ai_base_url') || !!localStorage.getItem('ai_api_key'));
+const aiCustom = ref('');
+const modelOptions = [
+  { label: 'DeepSeek Chat', value: 'deepseek-chat' },
+  { label: 'DeepSeek Reasoner', value: 'deepseek-reasoner' },
+  { label: 'GPT-4o', value: 'gpt-4o' },
+  { label: 'GPT-4o-mini', value: 'gpt-4o-mini' },
+  { label: 'Claude 3.5 Sonnet', value: 'claude-3-5-sonnet-20241022' },
+  { label: 'Qwen Max', value: 'qwen-max' },
+  { label: 'Qwen Plus', value: 'qwen-plus' },
+  { label: '自定义', value: '__custom__' },
+];
 const loading = ref(false);
 const klineData = ref<any[]>([]);
 const downloading = ref(false);
@@ -78,7 +93,7 @@ async function doAnalysis() {
   localStorage.setItem('ai_base_url', aiBaseUrl.value);
   localStorage.setItem('ai_api_key', aiApiKey.value);
   loading.value = true;
-  const m = aiModel.value || undefined;
+  const m = aiModel.value === '__custom__' ? aiCustom.value || undefined : aiModel.value || undefined;
   const u = aiBaseUrl.value || undefined;
   const k = aiApiKey.value || undefined;
   await stockStore.analyze(symbol.value, market.value, lookbackDays.value, m, u, k);
