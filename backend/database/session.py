@@ -79,7 +79,7 @@ async def transaction() -> AsyncGenerator[AsyncSession, None]:
         try:
             yield session
             await session.commit()
-        except SQLAlchemyError as exc:
+        except Exception as exc:
             await session.rollback()
             logger.exception("Database transaction failed: {error}", error=str(exc))
             raise DatabaseException(cause=exc) from exc
@@ -98,8 +98,8 @@ async def check_database_health() -> bool:
         async with AsyncSessionFactory() as session:
             await session.execute(text("SELECT 1"))
         return True
-    except SQLAlchemyError as exc:
-        logger.error("Database health check failed: {error}", error=str(exc))
+    except Exception as exc:
+        logger.warning("Database health check failed: {error}", error=str(exc))
         return False
 
 
