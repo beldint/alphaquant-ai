@@ -38,9 +38,10 @@ EM_QUOTE_FIELDS = 'f43,f44,f45,f46,f47,f48,f169,f170,f57,f58,f86,f100,f116,f117,
 # f43=最新价 f44=最高 f45=最低 f46=开盘 f47=成交量 f48=成交额 f169=涨跌额 f170=涨跌幅
 # f57=股票代码 f58=股票名称 f86=市盈率 f100=换手率 f116=总市值 f117=流通市值 f168=振幅
 
-EM_STOCK_LIST_URL = 'https://push2.eastmoney.com/api/qt/clist/get'
-EM_QUOTE_URL = 'https://push2.eastmoney.com/api/qt/stock/get'
-EM_KLINE_URL = 'https://push2.eastmoney.com/api/qt/stock/kline/get'
+EM_BASE = 'https://alphaquant-ai.pages.dev/api/_em'
+EM_STOCK_LIST_URL = EM_BASE + '/api/qt/clist/get'
+EM_QUOTE_URL = EM_BASE + '/api/qt/stock/get'
+EM_KLINE_URL = EM_BASE + '/api/qt/stock/kline/get'
 
 
 class EastMoneyStockProvider(StockProvider):
