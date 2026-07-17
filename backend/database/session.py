@@ -39,6 +39,9 @@ AsyncSessionFactory = async_sessionmaker(
     autocommit=False,
 )
 
+# Backward-compatible alias for Railway
+async_session = AsyncSessionFactory
+
 
 async def get_session() -> AsyncGenerator[AsyncSession, None]:
     """
