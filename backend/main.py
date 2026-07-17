@@ -37,7 +37,10 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     logger.info("Starting {app_name} {version}", app_name=settings.app_name, version=settings.app_version)
     yield
     logger.info("Stopping {app_name}", app_name=settings.app_name)
-    await redis_cache.close()
+    try:
+        await redis_cache.close()
+    except:
+        pass
     await dispose_engine()
 
 
