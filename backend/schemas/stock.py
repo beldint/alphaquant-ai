@@ -11,7 +11,7 @@ from datetime import date, datetime
 from decimal import Decimal
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import Field
 
 from backend.schemas.common import DateRangeQuery, ORMModel, PaginationQuery
 
@@ -52,33 +52,24 @@ class QuoteResponse(ORMModel):
     source: str
 
 
-class FinancialIndicators(BaseModel):
-    """Financial indicator response schema."""
-    model_config = ConfigDict()
+class KlineQuery(DateRangeQuery):
+    """Kline query schema."""
+
+    symbol: str = Field(min_length=1, max_length=32)
+    market: Literal["A", "HK", "US"] = Field(default="A")
+    frequency: Literal["1m","5m","15m","30m","60m","daily","weekly","monthly"] = Field(default="daily")
+    adjust: Literal["none","qfq","hfq"] = Field(default="qfq")
+
+
+class KlineResponse(ORMModel):
+    """Kline data response schema."""
+
     symbol: str
-    name: str
-    net_profit: float | None = None
-    deducted_net_profit: float | None = None
-    gross_margin: float | None = None
-    net_margin: float | None = None
-    roe: float | None = None
-    revenue: float | None = None
-    revenue_growth: float | None = None
-    debt_ratio: float | None = None
-    current_ratio: float | None = None
-    quick_ratio: float | None = None
-    cash: float | None = None
-    interest_debt: float | None = None
-    operating_cashflow: float | None = None
-    pe_ttm: float | None = None
-    pb: float | None = None
-    dividend_yield: float | None = None
-    inventory_days: float | None = None
-    ar_days: float | None = None
-    goodwill: float | None = None
-    pledge_ratio: float | None = None
-    major_reduction: str | None = None
-    auditor_change: str | None = None
-    market_cap: float | None = None
-    total_shares: float | None = None
-    report_date: str | None = None
+    trade_date: date
+    open_price: Decimal
+    high_price: Decimal
+    low_price: Decimal
+    close_price: Decimal
+    volume: Decimal
+    amount: Decimal
+    source: str
