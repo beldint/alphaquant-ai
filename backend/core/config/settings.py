@@ -13,6 +13,7 @@ from pathlib import Path
 from typing import Any, Literal
 
 from pydantic import (
+    Any,
     AnyUrl,
     AnyHttpUrl,
     Field,
@@ -123,7 +124,7 @@ class SecuritySettings(BaseAppSettings):
     refresh_token_expire_minutes: int = Field(default=60 * 24 * 14, ge=60)
     password_hash_algorithm: Literal["bcrypt"] = Field(default="bcrypt")
     password_bcrypt_rounds: int = Field(default=12, ge=10, le=16)
-    cors_allowed_origins: list[str] = Field(
+    cors_allowed_origins: Any = Field(
         default_factory=lambda: ["http://localhost:5173", "http://127.0.0.1:5173"],
     )
     cors_allowed_methods: list[str] = Field(
@@ -236,7 +237,7 @@ class AISettings(BaseAppSettings):
     """Unified AI provider settings for dynamic provider switching."""
 
     ai_default_provider: AIProviderName = Field(default=AIProviderName.DEEPSEEK)
-    ai_enabled_providers: list[AIProviderName] = Field(
+    ai_enabled_providers: Any = Field(
         default_factory=lambda: [AIProviderName.DEEPSEEK],
     )
     ai_request_timeout_seconds: float = Field(default=60.0, gt=0)
@@ -290,7 +291,7 @@ class StockDataSettings(BaseAppSettings):
 
     stock_default_market: Literal["A", "HK", "US"] = Field(default="A")
     stock_default_provider: StockProviderName = Field(default=StockProviderName.AKSHARE)
-    stock_provider_priority: list[StockProviderName] = Field(
+    stock_provider_priority: Any = Field(
         default_factory=lambda: [
             StockProviderName.AKSHARE,
             StockProviderName.EASTMONEY,
