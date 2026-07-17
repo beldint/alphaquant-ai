@@ -17,7 +17,7 @@
         </n-space>
         </n-grid-item>
       </n-grid>
-      <n-collapse class="mt-12" :expanded-names="showAiConfig ? ['ai'] : []" @update:expanded-names="onCollapseUpdate">
+      <n-collapse class="mt-12">
         <n-collapse-item title="AI 模型配置" name="ai">
           <n-grid :cols="3" :x-gap="12">
             <n-grid-item>
@@ -67,7 +67,6 @@ const lookbackDays = ref(120);
 const aiModel = ref(localStorage.getItem('ai_model') || '');
 const aiBaseUrl = ref(localStorage.getItem('ai_base_url') || '');
 const aiApiKey = ref(localStorage.getItem('ai_api_key') || '');
-const showAiConfig = ref(!!localStorage.getItem('ai_model') || !!localStorage.getItem('ai_base_url') || !!localStorage.getItem('ai_api_key'));
 const aiCustom = ref('');
 const modelOptions = [
   { type: 'group', label: 'DeepSeek', key: 'deepseek', options: [
@@ -258,7 +257,6 @@ function downloadReport() {
   if (!stockStore.analysisResult?.report_markdown) return;
   var blob = new Blob([stockStore.analysisResult.report_markdown], { type: "text/markdown;charset=utf-8" });
 
-function onCollapseUpdate(v) { showAiConfig.value = v.length > 0; }
 function onModelChange(v) {
   if (v === '__custom__') { aiModel.value = '__custom__'; }
   else { aiModel.value = v; aiCustom.value = ''; }
