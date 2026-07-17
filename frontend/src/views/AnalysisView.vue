@@ -237,13 +237,6 @@ const modelOptions = [
 const loading = ref(false);
 const klineData = ref<any[]>([]);
 const downloading = ref(false);
-const downloadReport = () => {
-  const s = stockStore.analysisResult?.symbol || symbol.value;
-  const url = `/api/v1/analysis/download?symbol=${s}&market=${market.value}&lookback_days=${lookbackDays.value}`;
-  downloading.value = true;
-  window.open(url, "_blank");
-  setTimeout(() => { downloading.value = false; }, 3000);
-};
 const marketOptions = [{ label: 'A股', value: 'A' }, { label: '港股', value: 'HK' }, { label: '美股', value: 'US' }];
 async function doAnalysis() {
   if (!symbol.value.trim()) return;
