@@ -67,3 +67,6 @@ stock-analysis/
 ├── .env.example      # 环境变量模板
 └── pyproject.toml    # Python 项目配置
 ```
+
+
+> Deployed on Railway + Cloudflare Pages
