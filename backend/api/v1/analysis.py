@@ -48,89 +48,84 @@ async def download_analysis(
 ):
     from backend.services.analysis_service import analysis_service
     result = await analysis_service.analyze_stock(symbol, market=market, lookback_days=lookback_days)
-
-    import os, io, logging
-    logger = logging.getLogger(__name__)
     filename = f"analysis_{symbol}_{market}_{lookback_days}d"
 
     if format == "md":
         return Response(
             content=result.report_markdown,
             media_type="text/markdown",
-            headers={"Content-Disposition": f'attachment; filename="{filename}.md"''}'
+            headers={"Content-Disposition": f'attachment; filename="{filename}.md"'}
         )
 
+    import os, io, logging
+    logger = logging.getLogger(__name__)
     try:
         from fpdf import FPDF
+        _font_file = None
+        _search_paths = [
+            os.path.join(os.path.dirname(__file__), "..", "..", "..", "fonts", "NotoSansSC-Regular.ttf"),
+            os.path.join("fonts", "NotoSansSC-Regular.ttf"),
+        ]
+        for _p in _search_paths:
+            if os.path.exists(_p):
+                _font_file = _p
+                break
+        if not _font_file:
+            _cache_dir = os.path.join(os.path.dirname(__file__), "..", "..", "..", "fonts")
+            os.makedirs(_cache_dir, exist_ok=True)
+            _font_file = os.path.join(_cache_dir, "NotoSansSC-Regular.ttf")
+            if not os.path.exists(_font_file):
+                try:
+                    import httpx
+                    _url = "https://raw.githubusercontent.com/notofonts/noto-cjk/main/Sans/OTF/SimplifiedChinese/NotoSansCJKsc-Regular.otf"
+                    logger.info("Downloading CJK font from " + _url)
+                    _resp = httpx.get(_url, follow_redirects=True, timeout=30)
+                    if _resp.status_code == 200:
+                        with open(_font_file, "wb") as _f:
+                            _f.write(_resp.content)
+                        logger.info("Font downloaded: " + str(len(_resp.content)) + " bytes")
+                    else:
+                        _font_file = None
+                except Exception as _e:
+                    logger.warning("Font DL failed: " + str(_e))
+                    _font_file = None
+
+        if not _font_file or not os.path.exists(_font_file):
+            return Response(content=result.report_markdown, media_type="text/markdown",
+                headers={"Content-Disposition": f'attachment; filename="{filename}.md"'})
+
         pdf = FPDF()
         pdf.set_auto_page_break(auto=True, margin=15)
         pdf.add_page()
-
-        font_paths = [
-            os.path.join("fonts", "NotoSansSC-Regular.ttf"),
-            os.path.join(os.path.dirname(__file__), "..", "..", "..", "fonts", "NotoSansSC-Regular.ttf"),
-        ]
-
-        noto_path = None
-        for fp in font_paths:
-            if os.path.exists(fp):
-                noto_path = fp
-                break
-
-        if not noto_path:
-            cache_dir = os.path.join(os.path.dirname(__file__), "..", "..", "..", "fonts")
-            os.makedirs(cache_dir, exist_ok=True)
-            noto_path = os.path.join(cache_dir, "NotoSansSC-Regular.ttf")
-            if not os.path.exists(noto_path):
-                try:
-                    import httpx
-                    url = "https://github.com/googlefonts/noto-cjk/releases/download/Sans2.004/03_NotoSansCJKsc.zip"
-                    logger.warning("Noto font not available, falling back to markdown")
-                    noto_path = None
-                except Exception:
-                    noto_path = None
-
-        if noto_path and os.path.exists(noto_path):
-            pdf.add_font("Noto", "", noto_path, uni=True)
-            font_name = "Noto"
-        else:
-            return Response(
-                content=result.report_markdown,
-                media_type="text/markdown",
-                headers={"Content-Disposition": f'attachment; filename="{filename}.md"''}'
-            )
-
-        lines = result.report_markdown.split("\n")
-        for line in lines:
-            if line.startswith("### "):
-                pdf.set_font(font_name, "B", 12)
-                pdf.cell(0, 8, line[4:], new_x="LMARGIN", new_y="NEXT")
-            elif line.startswith("## "):
-                pdf.set_font(font_name, "B", 14)
-                pdf.cell(0, 9, line[3:], new_x="LMARGIN", new_y="NEXT")
-            elif line.startswith("# "):
-                pdf.set_font(font_name, "B", 16)
-                pdf.cell(0, 10, line[2:], new_x="LMARGIN", new_y="NEXT")
-            elif line.strip().startswith("|"):
-                pdf.set_font(font_name, "", 8)
-                pdf.cell(0, 5, line.strip()[:160] if len(line) > 160 else line.strip(), new_x="LMARGIN", new_y="NEXT")
-            elif line.strip():
-                pdf.set_font(font_name, "", 10)
-                pdf.multi_cell(0, 6, line.strip())
+        pdf.add_font("CJK", "", _font_file, uni=True)
+        _lines = result.report_markdown.split("\n")
+        for _ln in _lines:
+            if _ln.startswith("### "):
+                pdf.set_font("CJK", "", 12)
+                _txt = _ln[4:].strip()
+                pdf.cell(0, 8, _txt, new_x="LMARGIN", new_y="NEXT")
+            elif _ln.startswith("## "):
+                pdf.set_font("CJK", "", 14)
+                _txt = _ln[3:].strip()
+                pdf.cell(0, 9, _txt, new_x="LMARGIN", new_y="NEXT")
+            elif _ln.startswith("# "):
+                pdf.set_font("CJK", "", 16)
+                _txt = _ln[2:].strip()
+                pdf.cell(0, 10, _txt, new_x="LMARGIN", new_y="NEXT")
+            elif _ln.strip().startswith("|"):
+                pdf.set_font("CJK", "", 8)
+                pdf.cell(0, 5, _ln.strip()[:180], new_x="LMARGIN", new_y="NEXT")
+            elif _ln.strip():
+                pdf.set_font("CJK", "", 10)
+                pdf.multi_cell(0, 6, _ln.strip())
             else:
                 pdf.cell(0, 4, "", new_x="LMARGIN", new_y="NEXT")
 
-        buf = io.BytesIO()
-        pdf.output(buf)
-        return Response(
-            content=buf.getvalue(),
-            media_type="application/pdf",
-            headers={"Content-Disposition": f'attachment; filename="{filename}.pdf"''}'
-        )
+        _buf = io.BytesIO()
+        pdf.output(_buf)
+        return Response(content=_buf.getvalue(), media_type="application/pdf",
+            headers={"Content-Disposition": f'attachment; filename="{filename}.pdf"'})
 
     except ImportError:
-        return Response(
-            content=result.report_markdown,
-            media_type="text/markdown",
-            headers={"Content-Disposition": f'attachment; filename="{filename}.md"''}'
-        )
+        return Response(content=result.report_markdown, media_type="text/markdown",
+            headers={"Content-Disposition": f'attachment; filename="{filename}.md"'})
