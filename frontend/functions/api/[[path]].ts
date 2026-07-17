@@ -1,3 +1,5 @@
+// deployed: 2026-07-17
+
 export async function onRequest(context) {
   const url = new URL(context.request.url);
   const path = url.pathname;
