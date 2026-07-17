@@ -3,7 +3,7 @@
     <div class="page-header"><h2>股票搜索</h2><p>搜索 A 股、港股、美股股票信息</p></div>
     <n-card size="small" class="mb-24">
       <n-input-group>
-        <n-input v-model:value="keyword" placeholder="输入股票代码或名称" clearable @keyup.enter="doSearch" />
+        <n-input v-model:value="keyword" placeholder="输入股票代码或名称" clearable @keyup.enter="doSearch" @input="doSearch" />
         <n-button type="primary" @click="doSearch" :loading="loading">搜索</n-button>
       </n-input-group>
     </n-card>
@@ -17,6 +17,7 @@ import { useRouter } from 'vue-router';
 import { NButton, NTag, NDataTable } from 'naive-ui';
 import type { DataTableColumn } from 'naive-ui';
 import { useStockStore } from '../stores/stock';
+import { searchStocks } from '../api';
 import { useWatchlistStore } from '../stores/watchlist';
 const router = useRouter();
 const stockStore = useStockStore();
@@ -27,8 +28,13 @@ const results = ref<any[]>([]);
 async function doSearch() {
   if (!keyword.value.trim()) return;
   loading.value = true;
-  await stockStore.search(keyword.value.trim());
-  results.value = stockStore.searchResults;
+  try {
+    var res = await searchStocks(keyword.value.trim(), 'A');
+    if (res.code === 0 && res.data) results.value = res.data;
+    else results.value = [];
+  } catch (e: any) {
+    results.value = [];
+  }
   loading.value = false;
 }
 const columns: DataTableColumn<any>[] = [
