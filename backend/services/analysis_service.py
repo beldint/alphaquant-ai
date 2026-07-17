@@ -35,6 +35,9 @@ class AnalysisService:
         *,
         market: Market = "A",
         lookback_days: int = 120,
+        model: str | None = None,
+        api_base_url: str | None = None,
+        api_key: str | None = None,
     ) -> StockAnalysisResponse:
         """
         Generate an AI stock analysis report from real market data.
@@ -118,7 +121,7 @@ class AnalysisService:
         Returns:
             Markdown report.
         """
-        provider = self.provider_factory.create()
+        provider = self.provider_factory.create_with_overrides(api_key=api_key, base_url=api_base_url, model=model)
         try:
             request = AICompletionRequest(
                 model=settings.ai_analysis_model,
