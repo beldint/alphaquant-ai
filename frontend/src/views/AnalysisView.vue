@@ -287,6 +287,11 @@ const downloading = ref(false);
 const marketOptions = [{ label: 'A股', value: 'A' }, { label: '港股', value: 'HK' }, { label: '美股', value: 'US' }];
 async function doAnalysis() {
   if (!symbol.value.trim()) return;
+  var _m = aiModel.value === '__custom__' ? aiCustom.value : aiModel.value;
+  if (!_m || !aiBaseUrl.value || !aiApiKey.value) {
+    message.warning('请先展开 AI 模型配置，填写模型名、API 地址和 API Key');
+    return;
+  }
   localStorage.setItem('ai_model', aiModel.value);
   localStorage.setItem('ai_base_url', aiBaseUrl.value);
   localStorage.setItem('ai_api_key', aiApiKey.value);
