@@ -90,5 +90,30 @@ async def get_quote(
 
 @router.get("/{symbol}/kline", response_model=APIResponse[list[dict[str, object]]])
 async def get_kline(
+    symbol: str,
+    market: Literal["A", "HK", "US"] = Query(default="A"),
+    start_date: date | None = Query(default=None),
+    end_date: date | None = Query(default=None),
+    adjust: Literal["none", "qfq", "hfq"] = Query(default="qfq"),
+) -> APIResponse[list[dict[str, object]]]:
+    """
+    Get daily Kline data.
 
+    Args:
+        symbol: Stock symbol.
+        market: Market identifier.
+        start_date: Optional start date.
+        end_date: Optional end date.
+        adjust: Price adjustment mode.
 
+    Returns:
+        Kline data response.
+    """
+    bars = await stock_service.get_daily_kline(
+        symbol,
+        market=market,
+        start_date=start_date,
+        end_date=end_date,
+        adjust=adjust,
+    )
+    return build_success_response([bar.model_dump(mode="json") for bar in bars])
