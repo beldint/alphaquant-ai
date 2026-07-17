@@ -7,6 +7,7 @@
           {{ isWatched ? '已自选' : '加自选' }}
         </n-button>
         <n-button size="small" type="success" ghost @click="goToAnalysis">AI分析</n-button>
+        <n-button size="small" ghost @click="downloadReport">下载报告</n-button>
       </n-space>
     </div>
     <n-grid :cols="4" :x-gap="16" class="mb-24" v-if="quote">
