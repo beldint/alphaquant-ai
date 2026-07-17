@@ -56,7 +56,7 @@
   </div>
 </template>
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref, computed, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import { useStockStore } from '../stores/stock';
 import TechnicalIndicators from '../components/TechnicalIndicators.vue';
@@ -329,6 +329,13 @@ function clearConfig() {
   aiCustom.value = '';
   message.success('已清除已保存的 AI 配置');
 }
+
+watch(aiModel, function(val) {
+  if (val && val !== '__custom__') {
+    var u = getProviderUrl(val);
+    if (u) aiBaseUrl.value = u;
+  }
+});
 
 function onModelChange(v) {
   if (v === '__custom__') { aiModel.value = '__custom__'; }
