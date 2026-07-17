@@ -17,6 +17,15 @@
         </n-space>
         </n-grid-item>
       </n-grid>
+      <n-collapse class="mt-12" :expanded-names="showAiConfig ? ['ai'] : []" @update:expanded-names="function(v) { showAiConfig = v.length > 0; }">
+        <n-collapse-item title="AI 模型配置" name="ai">
+          <n-grid :cols="3" :x-gap="12">
+            <n-grid-item><n-input v-model:value="aiModel" placeholder="模型名 (如 deepseek-chat)" size="small" /></n-grid-item>
+            <n-grid-item><n-input v-model:value="aiBaseUrl" placeholder="API 地址 (如 https://api.deepseek.com/v1)" size="small" /></n-grid-item>
+            <n-grid-item><n-input v-model:value="aiApiKey" type="password" placeholder="API Key" show-password-on="click" size="small" /></n-grid-item>
+          </n-grid>
+        </n-collapse-item>
+      </n-collapse>
     </n-card>
     <template v-if="stockStore.analysisResult">
       <n-grid :cols="3" :x-gap="16" class="mb-24">
@@ -37,16 +46,21 @@
   </div>
 </template>
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref } from 'vue';
 import { useRoute } from 'vue-router';
 import { useStockStore } from '../stores/stock';
 import TechnicalIndicators from '../components/TechnicalIndicators.vue';
 import AnalysisReport from '../components/AnalysisReport.vue';
+import { NCollapse, NCollapseItem } from 'naive-ui';
 const route = useRoute();
 const stockStore = useStockStore();
 const symbol = ref(route.query.symbol as string || '000001');
 const market = ref('A');
 const lookbackDays = ref(120);
+const aiModel = ref(localStorage.getItem('ai_model') || '');
+const aiBaseUrl = ref(localStorage.getItem('ai_base_url') || '');
+const aiApiKey = ref(localStorage.getItem('ai_api_key') || '');
+const showAiConfig = ref(!!localStorage.getItem('ai_model') || !!localStorage.getItem('ai_base_url') || !!localStorage.getItem('ai_api_key'));
 const loading = ref(false);
 const klineData = ref<any[]>([]);
 const downloading = ref(false);
@@ -60,8 +74,14 @@ const downloadReport = () => {
 const marketOptions = [{ label: 'A股', value: 'A' }, { label: '港股', value: 'HK' }, { label: '美股', value: 'US' }];
 async function doAnalysis() {
   if (!symbol.value.trim()) return;
+  localStorage.setItem('ai_model', aiModel.value);
+  localStorage.setItem('ai_base_url', aiBaseUrl.value);
+  localStorage.setItem('ai_api_key', aiApiKey.value);
   loading.value = true;
-  await stockStore.analyze(symbol.value, market.value, lookbackDays.value);
+  const m = aiModel.value || undefined;
+  const u = aiBaseUrl.value || undefined;
+  const k = aiApiKey.value || undefined;
+  await stockStore.analyze(symbol.value, market.value, lookbackDays.value, m, u, k);
   await stockStore.fetchKline(symbol.value, market.value);
   klineData.value = stockStore.klineData;
   loading.value = false;
