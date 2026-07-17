@@ -5,6 +5,7 @@
     </div>
     <div class="header-right">
       <n-tag v-if="isLoggedIn" type="success" size="small">{{ username }}</n-tag>
+      <n-button v-if="isLoggedIn" text size="small" @click="handleLogout">退出</n-button>
       <n-button v-else text size="small" @click="router.push({ name: 'login' })">登录</n-button>
     </div>
   </div>
@@ -22,6 +23,7 @@ const routeName = computed(() => {
 });
 const isLoggedIn = computed(() => authStore.isLoggedIn);
 const username = computed(() => authStore.user?.username || '');
+function handleLogout() { authStore.logout(); router.push({ name: 'login' }); }
 </script>
 <style scoped>
 .app-header { height: var(--header-height); display: flex; align-items: center; justify-content: space-between; padding: 0 24px; border-bottom: 1px solid var(--border-color); background: var(--card-bg); flex-shrink: 0; }
