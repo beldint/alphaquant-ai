@@ -155,7 +155,14 @@ class StockScorer:
             if len(frame) >= 5:
                 c5v = self._get(frame.iloc[-5], ['close','close']); c1v = self._get(frame.iloc[-1], ['close','close'])
                 if c5v and c1v: close_pct = (c1v - c5v) / c5v * 100
-            if close_pct > 5: s += 5; elif close_pct > 2: s += 3; elif close_pct < -5: s += 1; else: s += 2
+            if close_pct > 5:
+                s += 5
+            elif close_pct > 2:
+                s += 3
+            elif close_pct < -5:
+                s += 1
+            else:
+                s += 2
         return min(s, 20)
 
     def _calc_fundamental_score(self, last):
@@ -170,6 +177,13 @@ class StockScorer:
             c3 = self._get(frame.iloc[-3], ['close','close']); c1 = self._get(frame.iloc[-1], ['close','close'])
             if c3 and c1:
                 mom = (c1 - c3) / c3 * 100
-                if mom > 2: s += 8; elif mom > 0: s += 5; elif mom > -2: s += 3; else: s += 1
+                if mom > 2:
+                    s += 8
+                elif mom > 0:
+                    s += 5
+                elif mom > -2:
+                    s += 3
+                else:
+                    s += 1
             else: s += 3
         return min(s, 10)
