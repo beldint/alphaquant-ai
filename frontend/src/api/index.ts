@@ -27,7 +27,7 @@ export async function getKline(symbol: string, market = 'A', startDate?: string,
   return data;
 }
 /* Analysis */
-export async function analyzeStock(symbol: string, market = 'A', lookbackDays = 120): Promise<ApiResponse<{ symbol: string; market: string; provider: string; model: string; report_markdown: string; objective_data: Record<string, unknown>; technical_summary: Record<string, unknown>; risk_summary: Record<string, unknown>; data_timestamp: string }>> {
-  const { data } = await apiClient.post('/analysis/stock', { symbol, market, lookback_days: lookbackDays });
+export async function analyzeStock(symbol: string, market = 'A', lookbackDays = 120, model?: string, apiBaseUrl?: string, apiKey?: string): Promise<ApiResponse<{ symbol: string; market: string; provider: string; model: string; report_markdown: string; objective_data: Record<string, unknown>; technical_summary: Record<string, unknown>; risk_summary: Record<string, unknown>; data_timestamp: string }>> {
+  const { data } = await apiClient.post('/analysis/stock', { symbol, market, lookback_days: lookbackDays, model: model || undefined, api_base_url: apiBaseUrl || undefined, api_key: apiKey || undefined });
   return data;
 }
