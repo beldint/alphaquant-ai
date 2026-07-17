@@ -3,7 +3,7 @@
     <div class="page-header"><h2>股票搜索</h2><p>搜索 A 股、港股、美股股票信息</p></div>
     <n-card size="small" class="mb-24">
       <n-input-group>
-        <n-input v-model:value="keyword" placeholder="输入股票代码或名称" clearable @keyup.enter="doSearch" @input="doSearch" />
+        <n-input v-model:value="keyword" placeholder="输入股票代码或名称" clearable @keyup.enter="doSearch" />
         <n-button type="primary" @click="doSearch" :loading="loading">搜索</n-button>
       </n-input-group>
     </n-card>
@@ -12,7 +12,7 @@
   </div>
 </template>
 <script setup lang="ts">
-import { ref, h } from 'vue';
+import { ref, h, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { NButton, NTag, NDataTable } from 'naive-ui';
 import type { DataTableColumn } from 'naive-ui';
@@ -25,6 +25,11 @@ const watchlistStore = useWatchlistStore();
 const keyword = ref('');
 const loading = ref(false);
 const results = ref<any[]>([]);
+var _searchTimer: any = null;
+watch(keyword, function() {
+  if (_searchTimer) clearTimeout(_searchTimer);
+  _searchTimer = setTimeout(function() { _searchTimer = null; doSearch(); }, 400);
+});
 async function doSearch() {
   if (!keyword.value.trim()) return;
   loading.value = true;
