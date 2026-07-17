@@ -13,7 +13,7 @@ from typing import Literal
 from fastapi import APIRouter, Query
 
 from backend.core.responses import APIResponse, build_success_response
-from backend.schemas.stock import QuoteResponse, StockResponse, FinancialIndicators
+from backend.schemas.stock import QuoteResponse, StockResponse
 from backend.services.stock_service import stock_service
 
 
@@ -92,61 +92,3 @@ async def get_quote(
 async def get_kline(
 
 
-@router.get("/{symbol}/financials", response_model=APIResponse[FinancialIndicators])
-async def get_financials(
-    symbol: str,
-    market: str = Query(default="A", pattern="^(A|HK|US)$"),
-) -> APIResponse[FinancialIndicators]:
-    """Get financial indicators for a stock."""
-    quote = await stock_service.get_realtime_quote(symbol, market)
-    name = quote.name
-    # Try East Money finance API
-    from backend.datasource.providers.eastmoney_provider import EastMoneyStockProvider
-    em = EastMoneyStockProvider()
-    try:
-        fin = await em.get_financial_indicators(symbol)
-        await em.close()
-        return build_success_response(fin)
-    except Exception:
-        await em.close()
-        # Fallback: return basic data from quote
-        return build_success_response(FinancialIndicators(
-            symbol=symbol, name=name,
-            report_date="模拟数据",
-            net_profit=0, deducted_net_profit=0, gross_margin=0, net_margin=0,
-            roe=0, revenue=0, revenue_growth=0,
-            debt_ratio=0, current_ratio=0, quick_ratio=0,
-            cash=0, interest_debt=0, operating_cashflow=0,
-            pe_ttm=0, pb=0, dividend_yield=0,
-            inventory_days=0, ar_days=0, goodwill=0,
-            pledge_ratio=0, market_cap=0, total_shares=0,
-        ))
-
-    symbol: str,
-    market: Literal["A", "HK", "US"] = Query(default="A"),
-    start_date: date | None = Query(default=None),
-    end_date: date | None = Query(default=None),
-    adjust: Literal["none", "qfq", "hfq"] = Query(default="qfq"),
-) -> APIResponse[list[dict[str, object]]]:
-    """
-    Get daily Kline data.
-
-    Args:
-        symbol: Stock symbol.
-        market: Market identifier.
-        start_date: Optional start date.
-        end_date: Optional end date.
-        adjust: Price adjustment mode.
-
-    Returns:
-        Kline data response.
-    """
-    bars = await stock_service.get_daily_kline(
-        symbol,
-        market=market,
-        start_date=start_date,
-        end_date=end_date,
-        adjust=adjust,
-    )
-    decimal_fields = ["open_price","high_price","low_price","close_price","volume","amount"]
-    return build_success_response(_convert_kline(decimal_fields, bars))
