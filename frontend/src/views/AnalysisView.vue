@@ -69,13 +69,13 @@ const aiBaseUrl = ref(localStorage.getItem('ai_base_url') || '');
 const aiApiKey = ref(localStorage.getItem('ai_api_key') || '');
 const aiCustom = ref('');
 const modelOptions = [
-  { type: 'group', label: 'DeepSeek', key: 'deepseek', options: [
+  { type: 'group', label: 'DeepSeek', key: 'deepseek', children: [
     { label: 'DeepSeek V3 (最新)', value: 'deepseek-chat' },
     { label: 'DeepSeek R1 (最新)', value: 'deepseek-reasoner' },
     { label: 'DeepSeek R1-0528', value: 'deepseek-r1-0528' },
     { label: 'DeepSeek V3-0324', value: 'deepseek-v3-0324' },
   ]},
-  { type: 'group', label: 'OpenAI', key: 'openai', options: [
+  { type: 'group', label: 'OpenAI', key: 'openai', children: [
     { label: 'GPT-4.1 (最新)', value: 'gpt-4.1' },
     { label: 'GPT-4.1 mini (最新)', value: 'gpt-4.1-mini' },
     { label: 'GPT-4.1 nano (最新)', value: 'gpt-4.1-nano' },
@@ -92,7 +92,7 @@ const modelOptions = [
     { label: 'GPT-4', value: 'gpt-4' },
     { label: 'GPT-3.5 Turbo', value: 'gpt-3.5-turbo' },
   ]},
-  { type: 'group', label: 'Anthropic Claude', key: 'claude', options: [
+  { type: 'group', label: 'Anthropic Claude', key: 'claude', children: [
     { label: 'Claude Sonnet 4.5 (最新)', value: 'claude-sonnet-4-20250630' },
     { label: 'Claude Sonnet 4', value: 'claude-sonnet-4-20250514' },
     { label: 'Claude Opus 4.5 (最新)', value: 'claude-opus-4-20250630' },
@@ -103,7 +103,7 @@ const modelOptions = [
     { label: 'Claude 3 Sonnet', value: 'claude-3-sonnet-20240229' },
     { label: 'Claude 3 Haiku', value: 'claude-3-haiku-20240307' },
   ]},
-  { type: 'group', label: 'Google Gemini', key: 'gemini', options: [
+  { type: 'group', label: 'Google Gemini', key: 'gemini', children: [
     { label: 'Gemini 2.5 Pro (最新)', value: 'gemini-2.5-pro-exp-03-25' },
     { label: 'Gemini 2.5 Flash (最新)', value: 'gemini-2.5-flash-preview-04-17' },
     { label: 'Gemini 2.0 Flash', value: 'gemini-2.0-flash' },
@@ -111,7 +111,7 @@ const modelOptions = [
     { label: 'Gemini 1.5 Flash', value: 'gemini-1.5-flash' },
     { label: 'Gemini 1.0 Pro', value: 'gemini-1.0-pro' },
   ]},
-  { type: 'group', label: '阿里通义千问 (Qwen)', key: 'qwen', options: [
+  { type: 'group', label: '阿里通义千问 (Qwen)', key: 'qwen', children: [
     { label: 'Qwen3 Max (最新)', value: 'qwen3-max' },
     { label: 'Qwen3 (最新)', value: 'qwen3' },
     { label: 'Qwen3 Plus', value: 'qwen3-plus' },
@@ -121,27 +121,27 @@ const modelOptions = [
     { label: 'Qwen Turbo', value: 'qwen-turbo' },
     { label: 'Qwen Long', value: 'qwen-long' },
   ]},
-  { type: 'group', label: '月之暗面 Kimi', key: 'kimi', options: [
+  { type: 'group', label: '月之暗面 Kimi', key: 'kimi', children: [
     { label: 'Kimi k3 (最新)', value: 'kimi-k3' },
     { label: 'Kimi k2', value: 'kimi-k2' },
     { label: 'Moonshot v1 8K', value: 'moonshot-v1-8k' },
     { label: 'Moonshot v1 32K', value: 'moonshot-v1-32k' },
     { label: 'Moonshot v1 128K', value: 'moonshot-v1-128k' },
   ]},
-  { type: 'group', label: '字节豆包 (Doubao)', key: 'doubao', options: [
+  { type: 'group', label: '字节豆包 (Doubao)', key: 'doubao', children: [
     { label: 'Doubao Pro 32K', value: 'doubao-pro-32k' },
     { label: 'Doubao Pro 128K', value: 'doubao-pro-128k' },
     { label: 'Doubao Lite 32K', value: 'doubao-lite-32k' },
     { label: 'Doubao Lite 128K', value: 'doubao-lite-128k' },
   ]},
-  { type: 'group', label: '百度文心 (ERNIE)', key: 'ernie', options: [
+  { type: 'group', label: '百度文心 (ERNIE)', key: 'ernie', children: [
     { label: 'ERNIE 4.5 Turbo (最新)', value: 'ernie-4.5-turbo' },
     { label: 'ERNIE 4.0', value: 'ernie-4.0' },
     { label: 'ERNIE 3.5', value: 'ernie-3.5' },
     { label: 'ERNIE Speed', value: 'ernie-speed' },
     { label: 'ERNIE Lite', value: 'ernie-lite' },
   ]},
-  { type: 'group', label: '智谱 GLM (Zhipu)', key: 'glm', options: [
+  { type: 'group', label: '智谱 GLM (Zhipu)', key: 'glm', children: [
     { label: 'GLM-4 (最新)', value: 'glm-4' },
     { label: 'GLM-4 Plus', value: 'glm-4-plus' },
     { label: 'GLM-4 Air', value: 'glm-4-air' },
@@ -149,21 +149,21 @@ const modelOptions = [
     { label: 'GLM-4V (视觉)', value: 'glm-4v' },
     { label: 'CodeGeeX', value: 'codegeex-4' },
   ]},
-  { type: 'group', label: '零一万物 Yi', key: 'yi', options: [
+  { type: 'group', label: '零一万物 Yi', key: 'yi', children: [
     { label: 'Yi Lightning (最新)', value: 'yi-lightning' },
     { label: 'Yi Large', value: 'yi-large' },
     { label: 'Yi Medium', value: 'yi-medium' },
     { label: 'Yi Spark', value: 'yi-spark' },
   ]},
-  { type: 'group', label: '百川智能 (Baichuan)', key: 'baichuan', options: [
+  { type: 'group', label: '百川智能 (Baichuan)', key: 'baichuan', children: [
     { label: 'Baichuan 4 (最新)', value: 'baichuan4' },
     { label: 'Baichuan 3 Turbo', value: 'baichuan3-turbo' },
   ]},
-  { type: 'group', label: 'MiniMax', key: 'minimax', options: [
+  { type: 'group', label: 'MiniMax', key: 'minimax', children: [
     { label: 'MiniMax T1 (最新)', value: 'minimax-t1' },
     { label: 'MiniMax 01', value: 'minimax-01' },
   ]},
-  { type: 'group', label: 'Meta Llama', key: 'llama', options: [
+  { type: 'group', label: 'Meta Llama', key: 'llama', children: [
     { label: 'Llama 4 (最新)', value: 'llama-4' },
     { label: 'Llama 3.1 405B', value: 'llama-3.1-405b' },
     { label: 'Llama 3.1 70B', value: 'llama-3.1-70b' },
@@ -171,41 +171,41 @@ const modelOptions = [
     { label: 'Llama 3 70B', value: 'llama-3-70b' },
     { label: 'Llama 3 8B', value: 'llama-3-8b' },
   ]},
-  { type: 'group', label: 'Mistral AI', key: 'mistral', options: [
+  { type: 'group', label: 'Mistral AI', key: 'mistral', children: [
     { label: 'Mistral Large (最新)', value: 'mistral-large-2506' },
     { label: 'Mistral Small (最新)', value: 'mistral-small-2506' },
     { label: 'Mixtral 8x22B', value: 'mixtral-8x22b' },
     { label: 'Mixtral 8x7B', value: 'mixtral-8x7b' },
     { label: 'Mistral Nemo', value: 'mistral-nemo' },
   ]},
-  { type: 'group', label: 'Groq Cloud', key: 'groq', options: [
+  { type: 'group', label: 'Groq Cloud', key: 'groq', children: [
     { label: 'Llama 3.1 (Groq)', value: 'llama-3.1-70b-versatile' },
     { label: 'Llama 3 (Groq)', value: 'llama3-70b-8192' },
     { label: 'Mixtral (Groq)', value: 'mixtral-8x7b-32768' },
     { label: 'Gemma 2 (Groq)', value: 'gemma2-9b-it' },
     { label: 'DeepSeek (Groq)', value: 'deepseek-r1-distill-llama-70b' },
   ]},
-  { type: 'group', label: 'Together AI', key: 'together', options: [
+  { type: 'group', label: 'Together AI', key: 'together', children: [
     { label: 'Llama 3.1 (Together)', value: 'meta-llama/Meta-Llama-3.1-70B-Instruct-Turbo' },
     { label: 'Llama 3 (Together)', value: 'meta-llama/Llama-3-70b-chat-hf' },
     { label: 'Mixtral (Together)', value: 'mistralai/Mixtral-8x22B-Instruct-v0.1' },
     { label: 'Qwen 2.5 (Together)', value: 'Qwen/Qwen2.5-72B-Instruct-Turbo' },
     { label: 'DeepSeek (Together)', value: 'deepseek-ai/DeepSeek-R1' },
   ]},
-  { type: 'group', label: 'DeepInfra', key: 'deepinfra', options: [
+  { type: 'group', label: 'DeepInfra', key: 'deepinfra', children: [
     { label: 'Llama 3.1 (DeepInfra)', value: 'meta-llama/Meta-Llama-3.1-70B-Instruct' },
     { label: 'Qwen 2.5 (DeepInfra)', value: 'Qwen/Qwen2.5-72B-Instruct' },
   ]},
-  { type: 'group', label: 'Fireworks AI', key: 'fireworks', options: [
+  { type: 'group', label: 'Fireworks AI', key: 'fireworks', children: [
     { label: 'Llama 3.1 (Fireworks)', value: 'accounts/fireworks/models/llama-v3p1-70b-instruct' },
     { label: 'Mixtral (Fireworks)', value: 'accounts/fireworks/models/mixtral-8x22b-instruct' },
     { label: 'DeepSeek (Fireworks)', value: 'accounts/fireworks/models/deepseek-r1' },
   ]},
-  { type: 'group', label: 'Reka AI', key: 'reka', options: [
+  { type: 'group', label: 'Reka AI', key: 'reka', children: [
     { label: 'Reka Core (最新)', value: 'reka-core' },
     { label: 'Reka Flash', value: 'reka-flash' },
   ]},
-  { type: 'group', label: '🏠 Ollama (本地)', key: 'ollama', options: [
+  { type: 'group', label: '🏠 Ollama (本地)', key: 'ollama', children: [
     { label: 'Llama 3.1 (Ollama)', value: 'llama3.1' },
     { label: 'Llama 3 (Ollama)', value: 'llama3' },
     { label: 'Qwen 2.5 (Ollama)', value: 'qwen2.5' },
@@ -219,16 +219,16 @@ const modelOptions = [
     { label: 'GLM-4 (Ollama)', value: 'glm4' },
     { label: 'CodeGemma (Ollama)', value: 'codegemma' },
   ]},
-  { type: 'group', label: '🏠 vLLM (本地)', key: 'vllm', options: [
+  { type: 'group', label: '🏠 vLLM (本地)', key: 'vllm', children: [
     { label: 'vLLM 已部署模型', value: 'vllm-default' },
   ]},
-  { type: 'group', label: '🏠 LM Studio (本地)', key: 'lmstudio', options: [
+  { type: 'group', label: '🏠 LM Studio (本地)', key: 'lmstudio', children: [
     { label: 'LM Studio 已加载模型', value: 'lm-studio-default' },
   ]},
-  { type: 'group', label: '🏠 LocalAI (本地)', key: 'localai', options: [
+  { type: 'group', label: '🏠 LocalAI (本地)', key: 'localai', children: [
     { label: 'LocalAI 默认', value: 'localai-default' },
   ]},
-  { type: 'group', label: '🏠 llama.cpp (本地)', key: 'llamacpp', options: [
+  { type: 'group', label: '🏠 llama.cpp (本地)', key: 'llamacpp', children: [
     { label: 'llama.cpp 服务', value: 'llama-cpp-default' },
   ]},
   { label: '-- 自定义模型 --', value: '__custom__' },
