@@ -39,6 +39,13 @@ class AnalysisService:
         api_base_url: str | None = None,
         api_key: str | None = None,
     ) -> StockAnalysisResponse:
+        if not model or not api_base_url or not api_key:
+            from backend.core.exceptions import ConfigurationException
+            raise ConfigurationException(
+                "请在前端配置 AI 模型、API 地址和 API Key",
+                setting_name="frontend_ai_config",
+                details={"hint": "展开 AI 模型配置面板，填写模型名、API 地址和 API Key"},
+            )
         """
         Generate an AI stock analysis report from real market data.
 
