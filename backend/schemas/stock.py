@@ -1,5 +1,8 @@
+from __future__ import annotations
 
-
+from pydantic import BaseModel, ConfigDict, Field
+from typing import Literal
+from backend.schemas.common import ORMModel
 
 class FinancialIndicators(BaseModel):
     """Financial indicator response schema."""
