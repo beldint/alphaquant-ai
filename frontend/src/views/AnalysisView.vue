@@ -17,12 +17,12 @@
         </n-space>
         </n-grid-item>
       </n-grid>
-      <n-collapse class="mt-12" :expanded-names="showAiConfig ? ['ai'] : []" @update:expanded-names="function(v) { showAiConfig = v.length > 0; }">
+      <n-collapse class="mt-12" :expanded-names="showAiConfig ? ['ai'] : []" @update:expanded-names="onCollapseUpdate">
         <n-collapse-item title="AI 模型配置" name="ai">
           <n-grid :cols="3" :x-gap="12">
             <n-grid-item>
               <n-select v-model:value="aiModel" :options="modelOptions" placeholder="选择模型" size="small"
-                :filterable="true" :tag="true" @update:value="function(v) { if (v === '__custom__') aiModel = aiCustom || ''; else aiCustom = ''; }" />
+                :filterable="true" @update:value="onModelChange" />
               <n-input v-if="aiModel === '__custom__'" v-model:value="aiCustom" placeholder="输入自定义模型名" size="small" class="mt-6" />
             </n-grid-item>
             <n-grid-item><n-input v-model:value="aiBaseUrl" placeholder="API 地址 (如 http://localhost:11434/v1)" size="small" /></n-grid-item>
@@ -264,6 +264,12 @@ async function doAnalysis() {
 function downloadReport() {
   if (!stockStore.analysisResult?.report_markdown) return;
   var blob = new Blob([stockStore.analysisResult.report_markdown], { type: "text/markdown;charset=utf-8" });
+
+function onCollapseUpdate(v) { showAiConfig.value = v.length > 0; }
+function onModelChange(v) {
+  if (v === '__custom__') { aiModel.value = '__custom__'; }
+  else { aiModel.value = v; aiCustom.value = ''; }
+}
   var url = URL.createObjectURL(blob);
   var a = document.createElement("a");
   a.href = url;
