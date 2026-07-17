@@ -25,9 +25,12 @@
                 :filterable="true" :tag="true" @update:value="function(v) { if (v === '__custom__') aiModel = aiCustom || ''; else aiCustom = ''; }" />
               <n-input v-if="aiModel === '__custom__'" v-model:value="aiCustom" placeholder="输入自定义模型名" size="small" class="mt-6" />
             </n-grid-item>
-            <n-grid-item><n-input v-model:value="aiBaseUrl" placeholder="API 地址 (如 https://api.deepseek.com/v1)" size="small" /></n-grid-item>
+            <n-grid-item><n-input v-model:value="aiBaseUrl" placeholder="API 地址 (如 http://localhost:11434/v1)" size="small" /></n-grid-item>
             <n-grid-item><n-input v-model:value="aiApiKey" type="password" placeholder="API Key" show-password-on="click" size="small" /></n-grid-item>
           </n-grid>
+          <n-p depth="3" class="mt-6" style="font-size:12px">
+            本地服务默认地址: Ollama=http://localhost:11434/v1 | vLLM=http://localhost:8000/v1 | LM Studio=http://localhost:1234/v1 | LocalAI=http://localhost:8080/v1
+          </n-p>
         </n-collapse-item>
       </n-collapse>
     </n-card>
@@ -55,7 +58,7 @@ import { useRoute } from 'vue-router';
 import { useStockStore } from '../stores/stock';
 import TechnicalIndicators from '../components/TechnicalIndicators.vue';
 import AnalysisReport from '../components/AnalysisReport.vue';
-import { NCollapse, NCollapseItem, NSelect } from 'naive-ui';
+import { NCollapse, NCollapseItem, NSelect, NP } from 'naive-ui';
 const route = useRoute();
 const stockStore = useStockStore();
 const symbol = ref(route.query.symbol as string || '000001');
@@ -156,7 +159,41 @@ const modelOptions = [
     { label: 'Llama 3.1 (Fireworks)', value: 'llama-v3p1-70b-instruct' },
     { label: 'Mixtral (Fireworks)', value: 'mixtral-8x22b-instruct' },
   ]},
-  { label: '-- 自定义模型 --', value: '__custom__' },
+    { type: 'group', label: '🏠 本地 Ollama', key: 'ollama', options: [
+    { label: 'Llama 3.1 (Ollama)', value: 'llama3.1' },
+    { label: 'Llama 3 (Ollama)', value: 'llama3' },
+    { label: 'Qwen 2.5 (Ollama)', value: 'qwen2.5' },
+    { label: 'Qwen 2 (Ollama)', value: 'qwen2' },
+    { label: 'DeepSeek (Ollama)', value: 'deepseek-r1:7b' },
+    { label: 'Mistral (Ollama)', value: 'mistral' },
+    { label: 'Gemma 2 (Ollama)', value: 'gemma2' },
+    { label: 'Codestral (Ollama)', value: 'codestral' },
+    { label: 'Phi-3 (Ollama)', value: 'phi3' },
+    { label: 'Yi (Ollama)', value: 'yi' },
+    { label: 'GLM-4 (Ollama)', value: 'glm4' },
+  ]},
+  { type: 'group', label: '🏠 vLLM', key: 'vllm', options: [
+    { label: 'vLLM 已部署模型', value: 'vllm-default' },
+  ]},
+  { type: 'group', label: '🏠 LM Studio', key: 'lmstudio', options: [
+    { label: 'LM Studio 已加载模型', value: 'lm-studio-default' },
+  ]},
+  { type: 'group', label: '🏠 LocalAI', key: 'localai', options: [
+    { label: 'LocalAI 默认', value: 'localai-default' },
+  ]},
+  { type: 'group', label: '🏠 llama.cpp', key: 'llamacpp', options: [
+    { label: 'llama.cpp 服务', value: 'llama-cpp-default' },
+  ]},
+  { type: 'group', label: '🏠 Text Generation WebUI', key: 'oobabooga', options: [
+    { label: 'oobabooga 默认', value: 'text-generation-webui-default' },
+  ]},
+  { type: 'group', label: '🏠 Xinference', key: 'xinference', options: [
+    { label: 'Xorbits Inference 默认', value: 'xinference-default' },
+  ]},
+  { type: 'group', label: '🏠 Jan', key: 'jan', options: [
+    { label: 'Jan 默认模型', value: 'jan-default' },
+  ]},
+{ label: '-- 自定义模型 --', value: '__custom__' },
 ];
 const loading = ref(false);
 const klineData = ref<any[]>([]);
