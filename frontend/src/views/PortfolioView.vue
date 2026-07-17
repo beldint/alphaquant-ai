@@ -30,7 +30,7 @@
   </div>
 </template>
 <script setup lang="ts">
-import { ref, computed, reactive } from 'vue';
+import { ref, computed, reactive, h } from 'vue';
 import { NButton, NDataTable, NModal, NForm, NFormItem, NInput, NInputNumber, NSpace, NCard, NGrid, NGridItem, NStatistic, NEmpty } from 'naive-ui';
 import type { DataTableColumn } from 'naive-ui';
 import { usePortfolioStore } from '../stores/portfolio';
