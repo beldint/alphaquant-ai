@@ -29,7 +29,7 @@
             <n-grid-item><n-input v-model:value="aiApiKey" type="password" placeholder="API Key" show-password-on="click" size="small" /></n-grid-item>
           </n-grid>
           <n-p depth="3" class="mt-6" style="font-size:12px">
-            本地服务默认地址: Ollama=http://localhost:11434/v1 | vLLM=http://localhost:8000/v1 | LM Studio=http://localhost:1234/v1 | LocalAI=http://localhost:8080/v1
+{{ aiModel && aiModel !== '__custom__' ? (getProviderUrl(aiModel) ? '默认 API 地址: ' + getProviderUrl(aiModel) : '') : '选择模型后自动填入默认 API 地址' }}
           </n-p>
         </n-collapse-item>
       </n-collapse>
@@ -53,7 +53,7 @@
   </div>
 </template>
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import { useRoute } from 'vue-router';
 import { useStockStore } from '../stores/stock';
 import TechnicalIndicators from '../components/TechnicalIndicators.vue';
@@ -233,6 +233,51 @@ const modelOptions = [
   ]},
   { label: '-- 自定义模型 --', value: '__custom__' },
 ];
+
+const providerUrls: Record<string, string> = {
+  deepseek: 'https://api.deepseek.com/v1',
+  openai: 'https://api.openai.com/v1',
+  claude: 'https://api.anthropic.com/v1',
+  gemini: 'https://generativelanguage.googleapis.com/v1beta',
+  qwen: 'https://dashscope.aliyuncs.com/compatible-mode/v1',
+  kimi: 'https://api.moonshot.cn/v1',
+  doubao: 'https://ark.cn-beijing.volces.com/api/v3',
+  ernie: 'https://aip.baidubce.com/rpc/2.0/ai_custom/v1/wenxinworkshop/chat',
+  glm: 'https://open.bigmodel.cn/api/paas/v4',
+  yi: 'https://api.lingyiwanwu.com/v1',
+  baichuan: 'https://api.baichuan-ai.com/v1',
+  minimax: 'https://api.minimax.chat/v1',
+  ollama: 'http://localhost:11434/v1',
+  vllm: 'http://localhost:8000/v1',
+  lmstudio: 'http://localhost:1234/v1',
+  localai: 'http://localhost:8080/v1',
+  llamacpp: 'http://localhost:8080/v1',
+  oobabooga: 'http://localhost:5000/v1',
+  xinference: 'http://localhost:9997/v1',
+  jan: 'http://localhost:1337/v1',
+  groq: 'https://api.groq.com/openai/v1',
+  together: 'https://api.together.xyz/v1',
+  deepinfra: 'https://api.deepinfra.com/v1/openai',
+  fireworks: 'https://api.fireworks.ai/inference/v1',
+  reka: 'https://api.reka.ai/v1',
+  mistral: 'https://api.mistral.ai/v1',
+  llama: '',
+};
+function getProviderKey(val: string): string | null {
+  for (var g of modelOptions) {
+    if (g.type === "group" && g.children) {
+      for (var o of g.children) {
+        if (o.value === val) return g.key;
+      }
+    }
+  }
+  return null;
+}
+function getProviderUrl(val: string): string {
+  var pk = getProviderKey(val);
+  if (pk && providerUrls[pk]) return providerUrls[pk];
+  return '';
+}
 const loading = ref(false);
 const klineData = ref<any[]>([]);
 const downloading = ref(false);
@@ -257,9 +302,17 @@ function downloadReport() {
   if (!stockStore.analysisResult?.report_markdown) return;
   var blob = new Blob([stockStore.analysisResult.report_markdown], { type: "text/markdown;charset=utf-8" });
 
+const modelHint = computed(function() {
+  if (aiModel.value && aiModel.value !== '__custom__') {
+    var url = getProviderUrl(aiModel.value);
+    if (url) return '默认 API 地址: ' + url;
+  }
+  return '';
+});
+
 function onModelChange(v) {
   if (v === '__custom__') { aiModel.value = '__custom__'; }
-  else { aiModel.value = v; aiCustom.value = ''; }
+  else { aiModel.value = v; aiCustom.value = ''; if (!aiBaseUrl.value) { var u = getProviderUrl(v); if (u) aiBaseUrl.value = u; } }
 }
   var url = URL.createObjectURL(blob);
   var a = document.createElement("a");
