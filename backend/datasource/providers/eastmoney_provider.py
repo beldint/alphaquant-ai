@@ -156,5 +156,70 @@ class EastMoneyStockProvider(StockProvider):
         try: return Decimal(str(val))
         except: return default
 
-    async def close(self) -> None:
+    
+
+    async def get_financial_indicators(self, symbol: str) -> "FinancialIndicators":
+        """Fetch financial indicators from East Money and cninfo data."""
+        from backend.schemas.stock import FinancialIndicators
+        import re
+        
+        quote_data = {}
+        try:
+            params = {"secid": _secid(symbol), "fields": "f43,f44,f45,f46,f47,f48,f57,f58,f86,f100,f116,f117,f168,f169,f170"}
+            resp = await self._http.get(EM_QUOTE_URL, params=params)
+            quote_data = (resp.json()).get("data") or {}
+        except Exception:
+            pass
+        
+        name = str(quote_data.get("f58", symbol))
+        pe = self._p(quote_data.get("f100"))
+        pb_fin = self._p(quote_data.get("f86"))
+        mcap = self._v(quote_data.get("f116"))
+        tshares = self._v(quote_data.get("f117"))
+        
+        # Try to fetch financial data from East Money datacenter
+        fin_data = {}
+        try:
+            dc_url = "https://datacenter.eastmoney.com/securities/api/data/v1/get"
+            dc_params = {
+                "reportName": "RPT_LICO_FN_CPD",
+                "columns": "SECUCODE,BASIC_EPS,WEIGHTAVG_ROE,GROSSPROFIT_MARGIN,NETPROFIT_MARGIN,DEBT_ASSET_RATIO,CURRENT_RATIO,QUICK_RATIO,OPERATE_INCOME,NETPROFIT,PROFIT_DEDUCTED_NOT,CASHFLOW_OPERATE,OPERATE_INCOME_YOY,TOTAL_SHARES",
+                "filter": f'(SECUCODE="{_secid(symbol)}")',
+                "pageNumber": 1, "pageSize": 1,
+                "sortTypes": -1, "sortColumns": "BASIC_EPS"
+            }
+            resp2 = await self._http.get(dc_url, params=dc_params)
+            dc_result = (resp2.json()).get("result") or {}
+            lists = dc_result.get("data") or []
+            if lists:
+                fin_data = lists[0]
+        except Exception as e:
+            logger.warning("East Money finance API failed: %s", e)
+        
+        def g(key: str, default=None):
+            v = fin_data.get(key)
+            return v if v is not None else default
+        
+        return FinancialIndicators(
+            symbol=symbol, name=name,
+            report_date=str(g("REPORT_DATE", "N/A")),
+            net_profit=g("NETPROFIT"),
+            deducted_net_profit=g("PROFIT_DEDUCTED_NOT"),
+            gross_margin=g("GROSSPROFIT_MARGIN"),
+            net_margin=g("NETPROFIT_MARGIN"),
+            roe=g("WEIGHTAVG_ROE"),
+            revenue=g("OPERATE_INCOME"),
+            revenue_growth=g("OPERATE_INCOME_YOY"),
+            debt_ratio=g("DEBT_ASSET_RATIO"),
+            current_ratio=g("CURRENT_RATIO"),
+            quick_ratio=g("QUICK_RATIO"),
+            operating_cashflow=g("CASHFLOW_OPERATE"),
+            total_shares=g("TOTAL_SHARES"),
+            pe_ttm=float(pe) if pe else None,
+            pb=float(pb_fin) if pb_fin else None,
+            market_cap=float(mcap) if mcap else None,
+        )
+
+
+async def close(self) -> None:
         await self._http.aclose()
