@@ -93,6 +93,7 @@ class AIProviderFactory:
         api_key: SecretStr | None,
         base_url: str,
         default_model: str,
+        skip_env_check: bool = False,
     ) -> OpenAICompatibleProvider:
         """
         Create an OpenAI-compatible provider.
@@ -109,12 +110,13 @@ class AIProviderFactory:
         Raises:
             ConfigurationException: If the API key is missing.
         """
-        import os as _env_os
-        _env_n = provider_name.value.upper() + "_API_KEY"
-        _env_v = _env_os.environ.get(_env_n, "")
-        if _env_v:
-            api_key = SecretStr(_env_v)
-        elif api_key is None or not api_key.get_secret_value().strip():
+        if not skip_env_check:
+            import os as _env_os
+            _env_n = provider_name.value.upper() + "_API_KEY"
+            _env_v = _env_os.environ.get(_env_n, "")
+            if _env_v:
+                api_key = SecretStr(_env_v)
+        if api_key is None or not api_key.get_secret_value().strip():
             raise ConfigurationException(
                 "AI provider API key is not configured",
                 setting_name=f"{provider_name.value}_api_key",
@@ -153,4 +155,5 @@ class AIProviderFactory:
         _final_url = base_url or _orig_base_url
         _final_model = model or _orig_model
         
-        return self._create_openai_compatible(selected, _final_key, _final_url, _final_model)
+        _skip = bool(api_key)
+        return self._create_openai_compatible(selected, _final_key, _final_url, _final_model, skip_env_check=_skip)
