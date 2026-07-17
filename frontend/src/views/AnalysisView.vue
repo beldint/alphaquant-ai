@@ -13,7 +13,8 @@
         <n-grid-item>
           <n-space>
           <n-button type="primary" @click="doAnalysis" :loading="loading">开始分析</n-button>
-          <n-button @click="downloadReport" :disabled="!stockStore.analysisResult" ghost>下载报告</n-button>
+          <n-button @click="downloadReport" :disabled="!stockStore.analysisResult" ghost>下载 MD</n-button>
+          <n-button @click="downloadHtml" :disabled="!stockStore.analysisResult" ghost>下载 HTML</n-button>
         </n-space>
         </n-grid-item>
       </n-grid>
@@ -369,6 +370,43 @@ function onModelChange(v) {
   var a = document.createElement("a");
   a.href = url;
   a.download = "analysis_" + symbol.value + "_" + market.value + "_" + lookbackDays.value + "d.md";
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function downloadHtml() {
+  var md = stockStore.analysisResult?.report_markdown;
+  if (!md) return;
+  var html = md
+    .replace(/### (.+)/g, '<h3>$1</h3>')
+    .replace(/## (.+)/g, '<h2>$1</h2>')
+    .replace(/# (.+)/g, '<h1>$1</h1>')
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\n/g, '<br/>')
+    .replace(/- (.+)/g, '<li>$1</li>');
+  var doc = '<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><title>'
+    + 'AI 分析报告 - ' + symbol.value + '</title><style>'
+    + 'body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;max-width:800px;margin:0 auto;padding:20px;line-height:1.8;color:#333}'
+    + 'h1{color:#1a1a1a;border-bottom:2px solid #2080f0;padding-bottom:8px}'
+    + 'h2{color:#2c2c2c;margin-top:24px}'
+    + 'h3{color:#444;margin-top:16px}'
+    + 'strong{color:#2080f0}'
+    + 'li{margin:4px 0}'
+    + '.header{text-align:center;margin-bottom:30px}'
+    + '.header h1{font-size:22px;border:none}'
+    + '.header p{color:#888;font-size:14px}'
+    + '.footer{text-align:center;margin-top:40px;padding-top:16px;border-top:1px solid #eee;color:#aaa;font-size:12px}'
+    + '</style></head><body>'
+    + '<div class="header"><h1>AI 股票分析报告</h1>'
+    + '<p>股票: ' + symbol.value + ' | 市场: ' + market.value + ' | 回溯: ' + lookbackDays.value + '天 | 生成时间: ' + new Date().toLocaleString() + '</p></div>'
+    + '<div class="content">' + html + '</div>'
+    + '<div class="footer">由 AlphaQuant AI 生成 | 仅供参考，不构成投资建议</div>'
+    + '</body></html>';
+  var blob = new Blob([doc], { type: 'text/html;charset=utf-8' });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = 'analysis_' + symbol.value + '_' + market.value + '_' + lookbackDays.value + 'd.html';
   a.click();
   URL.revokeObjectURL(url);
 }
