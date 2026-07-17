@@ -301,8 +301,8 @@ class StockDataSettings(BaseAppSettings):
             StockProviderName.BAOSTOCK,
         ],
     )
-    stock_request_timeout_seconds: float = Field(default=15.0, gt=0)
-    stock_max_retries: int = Field(default=3, ge=0, le=10)
+    stock_request_timeout_seconds: float = Field(default=5.0, gt=0)
+    stock_max_retries: int = Field(default=0, ge=0, le=10)
     stock_retry_backoff_seconds: float = Field(default=1.0, gt=0)
     stock_rate_limit_per_minute: int = Field(default=120, ge=1)
     stock_market_open_time: str = Field(default="09:30")
