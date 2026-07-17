@@ -51,6 +51,35 @@ export async function onRequest(context) {
     } catch(e) { return proxyToRailway(); }
   }
 
+
+  // Kline: use Yahoo Finance
+  const km = path.match(/\/api\/v1\/stocks\/(\d+)\/kline$/);
+  if (km) {
+    try {
+      const sym = km[1];
+      const yahooSym = sym.startsWith("6") ? sym + ".SS" : sym + ".SZ";
+      var sd = url.searchParams.get("start_date") || "";
+      var ed = url.searchParams.get("end_date") || "";
+      var range = "3mo";
+      if (sd) { var days = (new Date(ed||new Date()) - new Date(sd)) / 86400000; if (days <= 31) range="1mo"; else if (days <= 62) range="2mo"; else if (days <= 93) range="3mo"; else if (days <= 183) range="6mo"; else range="1y"; }
+      var yh = await fetch("https://query1.finance.yahoo.com/v8/finance/chart/" + yahooSym + "?interval=1d&range=" + range, {headers:{"User-Agent":"Mozilla/5.0"}});
+      var yj = await yh.json();
+      var r = yj.chart.result[0];
+      var timestamps = r.timestamp || [];
+      var quotes = r.indicators.quote[0];
+      var result = [];
+      for (var i = 0; i < timestamps.length; i++) {
+        var dt = new Date(timestamps[i] * 1000);
+        var ds = dt.getFullYear() + "-" + String(dt.getMonth()+1).padStart(2,"0") + "-" + String(dt.getDate()).padStart(2,"0");
+        var o = quotes.open[i], h = quotes.high[i], l = quotes.low[i], c = quotes.close[i], v = quotes.volume[i];
+        if (o && c) {
+          result.push({trade_date:ds, open_price:o, high_price:h, low_price:l, close_price:c, volume:v||0, amount:(v||0)*o});
+        }
+      }
+      if (result.length > 0) return new Response(JSON.stringify({code:0,message:"success",data:result}),{headers:{"Content-Type":"application/json"}});
+    } catch(e) {}
+    return proxyToRailway();
+  }
   // Search: filter from stock list
   if (path === "/api/v1/stocks/search") {
     try {
