@@ -4,9 +4,11 @@
       <n-breadcrumb><n-breadcrumb-item>AlphaQuant AI</n-breadcrumb-item><n-breadcrumb-item>{{ routeName }}</n-breadcrumb-item></n-breadcrumb>
     </div>
     <div class="header-right">
-      <n-tag v-if="isLoggedIn" type="success" size="small">{{ username }}</n-tag>
-      <n-button v-if="isLoggedIn" text size="small" @click="handleLogout">退出</n-button>
-      <n-button text size="tiny" @click="handleClearData" style="margin-left:4px">清除缓存</n-button>
+      <template v-if="isLoggedIn">
+        <n-tag type="success" size="small">{{ username }}</n-tag>
+        <n-button text size="small" @click="handleLogout">退出</n-button>
+        <n-button text size="tiny" @click="handleClearData" style="margin-left:4px">清除缓存</n-button>
+      </template>
       <n-button v-else text size="small" @click="router.push({ name: 'login' })">登录</n-button>
     </div>
   </div>
