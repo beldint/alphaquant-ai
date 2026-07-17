@@ -92,7 +92,7 @@ class MockStockProvider(StockProvider):
     async def search_stocks(self, keyword, market='A'):
         result = [s for s in MOCK_STOCKS if keyword.lower() in s.symbol.lower() or keyword.lower() in s.name.lower()]
         return result if result else []
-    async def get_realtime_quote(self, symbol, market='A'):
+    async async def get_realtime_quote(self, symbol, market='A'):
         name = next((s.name for s in MOCK_STOCKS if s.symbol == symbol), symbol)
         if symbol not in self._price:
             self._price[symbol] = round(uniform(10, 500), 2)
@@ -105,7 +105,7 @@ class MockStockProvider(StockProvider):
             volume=Decimal(str(int(uniform(1e6, 1e8)))),
             amount=Decimal(str(int(uniform(1e7, 1e9)))),
             timestamp=datetime.now().astimezone(), source=StockProviderName.TUSHARE)
-    async def get_daily_kline(self, symbol, market='A', start_date=None, end_date=None, adjust='qfq'):
+    async async def get_daily_kline(self, symbol, market='A', start_date=None, end_date=None, adjust='qfq'):
         end = end_date or datetime.now().date()
         start = start_date or (end - timedelta(days=120))
         bars, price = [], Decimal(str(round(uniform(10, 500), 2)))
