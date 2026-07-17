@@ -66,6 +66,22 @@ MOCK_STOCKS = [
     StockIdentity(symbol='688041', name='海光信息', market='A', exchange='SSE', industry='电子'),
     StockIdentity(symbol='688256', name='寒武纪', market='A', exchange='SSE', industry='电子'),
     StockIdentity(symbol='688012', name='中微公司', market='A', exchange='SSE', industry='电子'),
+    StockIdentity(symbol='000100', name='TCL科技', market='A', exchange='SZSE', industry='电子'),
+    StockIdentity(symbol='000625', name='长安汽车', market='A', exchange='SZSE', industry='汽车'),
+    StockIdentity(symbol='002129', name='TCL中环', market='A', exchange='SZSE', industry='电力设备'),
+    StockIdentity(symbol='002466', name='天齐锂业', market='A', exchange='SZSE', industry='有色金属'),
+    StockIdentity(symbol='002460', name='赣锋锂业', market='A', exchange='SZSE', industry='有色金属'),
+    StockIdentity(symbol='002601', name='龙佰集团', market='A', exchange='SZSE', industry='基础化工'),
+    StockIdentity(symbol='300676', name='华大基因', market='A', exchange='SZSE', industry='医药生物'),
+    StockIdentity(symbol='300661', name='圣邦股份', market='A', exchange='SZSE', industry='电子'),
+    StockIdentity(symbol='300124', name='汇川技术', market='A', exchange='SZSE', industry='电力设备'),
+    StockIdentity(symbol='600028', name='中国石化', market='A', exchange='SSE', industry='石油石化'),
+    StockIdentity(symbol='600104', name='上汽集团', market='A', exchange='SSE', industry='汽车'),
+    StockIdentity(symbol='600745', name='闻泰科技', market='A', exchange='SSE', industry='电子'),
+    StockIdentity(symbol='601088', name='中国神华', market='A', exchange='SSE', industry='煤炭'),
+    StockIdentity(symbol='601766', name='中国中车', market='A', exchange='SSE', industry='机械设备'),
+    StockIdentity(symbol='603259', name='药明康德', market='A', exchange='SSE', industry='医药生物'),
+    StockIdentity(symbol='688396', name='华润微', market='A', exchange='SSE', industry='电子'),
     StockIdentity(symbol='688111', name='金山办公', market='A', exchange='SSE', industry='计算机'),
 ]
 
@@ -75,7 +91,7 @@ class MockStockProvider(StockProvider):
         self._price = {}
     async def search_stocks(self, keyword, market='A'):
         result = [s for s in MOCK_STOCKS if keyword.lower() in s.symbol.lower() or keyword.lower() in s.name.lower()]
-        return result if result else MOCK_STOCKS[:5]
+        return result if result else []
     async def get_realtime_quote(self, symbol, market='A'):
         name = next((s.name for s in MOCK_STOCKS if s.symbol == symbol), symbol)
         if symbol not in self._price:
