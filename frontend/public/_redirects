@@ -1,0 +1,2 @@
+﻿# Cloudflare Pages API proxy: /api/* 请求转发到 Railway 后端
+/api/*  https://your-app-name.up.railway.app/api/:splat  200

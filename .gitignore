@@ -1,0 +1,36 @@
+# Project: AlphaQuant AI
+# File: .gitignore
+# Description: Git ignore rules for local, generated, and sensitive files.
+# Python Version: 3.11.9
+
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+.env
+.env.*
+!.env.example
+
+logs/
+uploads/
+static/
+
+.venv/
+venv/
+env/
+
+node_modules/
+dist/
+coverage/
+
+*.sqlite3
+*.db
+
+.DS_Store
+Thumbs.db
+
