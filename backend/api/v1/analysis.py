@@ -100,26 +100,35 @@ async def download_analysis(
         pdf.add_font("CJK", "", _font_file, uni=True)
         _lines = result.report_markdown.split("\n")
         for _ln in _lines:
-            if _ln.startswith("### "):
-                pdf.set_font("CJK", "", 12)
-                _txt = _ln[4:].strip()
-                pdf.cell(0, 8, _txt, new_x="LMARGIN", new_y="NEXT")
-            elif _ln.startswith("## "):
-                pdf.set_font("CJK", "", 14)
-                _txt = _ln[3:].strip()
-                pdf.cell(0, 9, _txt, new_x="LMARGIN", new_y="NEXT")
-            elif _ln.startswith("# "):
-                pdf.set_font("CJK", "", 16)
-                _txt = _ln[2:].strip()
-                pdf.cell(0, 10, _txt, new_x="LMARGIN", new_y="NEXT")
-            elif _ln.strip().startswith("|"):
-                pdf.set_font("CJK", "", 8)
-                pdf.cell(0, 5, _ln.strip()[:180], new_x="LMARGIN", new_y="NEXT")
-            elif _ln.strip():
-                pdf.set_font("CJK", "", 10)
-                pdf.multi_cell(0, 6, _ln.strip())
-            else:
-                pdf.cell(0, 4, "", new_x="LMARGIN", new_y="NEXT")
+            try:
+                if _ln.startswith("### "):
+                    pdf.set_font("CJK", "", 10)
+                    _txt = _ln[4:].strip()
+                    pdf.cell(0, 7, _txt[:200] if len(_txt) > 200 else _txt, new_x="LMARGIN", new_y="NEXT")
+                elif _ln.startswith("## "):
+                    pdf.set_font("CJK", "", 12)
+                    _txt = _ln[3:].strip()
+                    pdf.cell(0, 8, _txt[:200] if len(_txt) > 200 else _txt, new_x="LMARGIN", new_y="NEXT")
+                elif _ln.startswith("# "):
+                    pdf.set_font("CJK", "", 14)
+                    _txt = _ln[2:].strip()
+                    pdf.cell(0, 9, _txt[:200] if len(_txt) > 200 else _txt, new_x="LMARGIN", new_y="NEXT")
+                elif _ln.strip().startswith("|"):
+                    pdf.set_font("CJK", "", 7)
+                    _txt = _ln.strip()[:180]
+                    if _txt.count("|") > 2:
+                        pdf.cell(0, 4.5, _txt[:180], new_x="LMARGIN", new_y="NEXT")
+                    else:
+                        pdf.cell(0, 4.5, _txt[:180], new_x="LMARGIN", new_y="NEXT")
+                elif _ln.strip():
+                    pdf.set_font("CJK", "", 9)
+                    _txt = _ln.strip()
+                    _txt = _txt[:500] if len(_txt) > 500 else _txt
+                    pdf.multi_cell(0, 5, _txt)
+                else:
+                    pdf.cell(0, 3, "", new_x="LMARGIN", new_y="NEXT")
+            except Exception:
+                pdf.cell(0, 5, "[...]", new_x="LMARGIN", new_y="NEXT")
 
         _buf = io.BytesIO()
         pdf.output(_buf)
