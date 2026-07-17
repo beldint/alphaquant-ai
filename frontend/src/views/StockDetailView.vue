@@ -13,7 +13,7 @@
     <n-grid :cols="4" :x-gap="16" class="mb-24" v-if="quote">
       <n-grid-item><n-statistic label="最新价" :value="quote.price" :tabular-nums="true" /></n-grid-item>
       <n-grid-item><n-statistic label="涨跌额" :value="quote.change" :tabular-nums="true" :style="quote.change >= 0 ? 'color:var(--up-color)' : 'color:var(--down-color)'" /></n-grid-item>
-      <n-grid-item><n-statistic label="涨跌幅" :value="${quote.pct_change}%" :tabular-nums="true" :style="quote.pct_change >= 0 ? 'color:var(--up-color)' : 'color:var(--down-color)'" /></n-grid-item>
+      <n-grid-item><n-statistic label="涨跌幅" :value="quote.pct_change + '%'" :tabular-nums="true" :style="quote.pct_change >= 0 ? 'color:var(--up-color)' : 'color:var(--down-color)'" /></n-grid-item>
       <n-grid-item><n-statistic label="成交量" :value="formatVolume(quote.volume)" :tabular-nums="true" /></n-grid-item>
     </n-grid>
     <n-card size="small" class="mb-24">
