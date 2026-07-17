@@ -21,6 +21,7 @@ import { ref, h, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { NButton, NTag, NDataTable } from 'naive-ui';
 import type { DataTableColumn } from 'naive-ui';
+import { searchStocks } from "../api";
 import StockSearch from '../components/StockSearch.vue';
 import { useStockStore } from '../stores/stock';
 import { useWatchlistStore } from '../stores/watchlist';
@@ -59,5 +60,20 @@ const hotColumns: DataTableColumn<any>[] = [
   { title: '行业', key: 'industry' },
   { title: '操作', width: 100, render: (row) => h(NButton, { size: 'tiny', type: 'primary', onClick: () => router.push({ name: 'stockDetail', params: { symbol: row.symbol } }) }, () => '查看') },
 ];
-onMounted(() => { /* auto-load later */ });
+onMounted(async () => {
+  try {
+    const res = await searchStocks("000001", "A");
+    if (res.code === 0 && res.data && res.data.length > 0)
+      shIndex.value = res.data[0].symbol + " " + res.data[0].name;
+    const res2 = await searchStocks("000333", "A");
+    if (res2.code === 0 && res2.data && res2.data.length > 0)
+      szIndex.value = res2.data[0].symbol + " " + res2.data[0].name;
+    const res3 = await searchStocks("300750", "A");
+    if (res3.code === 0 && res3.data && res3.data.length > 0)
+      cybIndex.value = res3.data[0].symbol + " " + res3.data[0].name;
+    const res4 = await searchStocks("688981", "A");
+    if (res4.code === 0 && res4.data && res4.data.length > 0)
+      kcbIndex.value = res4.data[0].symbol + " " + res4.data[0].name;
+  } catch(e) { console.error(e) }
+});
 </script>
