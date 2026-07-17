@@ -34,6 +34,9 @@ async def analyze_stock(
         request.symbol,
         market=request.market,
         lookback_days=request.lookback_days,
+        model=request.model,
+        api_base_url=request.api_base_url,
+        api_key=request.api_key,
     )
     return build_success_response(response)
 
