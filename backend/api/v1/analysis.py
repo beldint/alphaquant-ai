@@ -7,7 +7,7 @@ Python Version: 3.11.9
 
 from __future__ import annotations
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Query, Response
 
 from backend.core.responses import APIResponse, build_success_response
 from backend.schemas.analysis import StockAnalysisRequest, StockAnalysisResponse
@@ -37,3 +37,18 @@ async def analyze_stock(
     )
     return build_success_response(response)
 
+
+
+@router.get("/download")
+async def download_analysis(
+    symbol: str = Query(min_length=1, max_length=32),
+    market: str = Query(default="A"),
+    lookback_days: int = Query(default=120, ge=20, le=1000),
+):
+    from backend.services.analysis_service import analysis_service
+    result = await analysis_service.analyze_stock(symbol, market=market, lookback_days=lookback_days)
+    filename = f"analysis_{symbol}_{market}_{lookback_days}d.md"
+    return Response(
+        content=result.report_markdown,
+        media_type="text/markdown",
+    )
