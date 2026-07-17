@@ -6,6 +6,7 @@
     <div class="header-right">
       <n-tag v-if="isLoggedIn" type="success" size="small">{{ username }}</n-tag>
       <n-button v-if="isLoggedIn" text size="small" @click="handleLogout">退出</n-button>
+      <n-button text size="tiny" @click="handleClearData" style="margin-left:4px">清除缓存</n-button>
       <n-button v-else text size="small" @click="router.push({ name: 'login' })">登录</n-button>
     </div>
   </div>
@@ -23,6 +24,7 @@ const routeName = computed(() => {
 });
 const isLoggedIn = computed(() => authStore.isLoggedIn);
 const username = computed(() => authStore.user?.username || '');
+function handleClearData() { var ks = ['ai_model','ai_base_url','ai_api_key','ai_custom','portfolio_holdings','token']; for (var i = 0; i < ks.length; i++) localStorage.removeItem(ks[i]); }
 function handleLogout() { authStore.logout(); router.push({ name: 'login' }); }
 </script>
 <style scoped>
