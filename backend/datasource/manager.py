@@ -18,6 +18,7 @@ from backend.core.config import Settings, settings
 from backend.core.config.settings import StockProviderName
 from backend.core.exceptions import ConfigurationException, StockException
 from backend.datasource.providers.akshare_provider import AKShareProvider
+from backend.datasource.providers.yahoo_provider import YahooStockProvider
 from backend.datasource.providers.mock_provider import MockStockProvider
 from backend.datasource.providers.eastmoney_provider import EastMoneyStockProvider
 from backend.datasource.providers.eastmoney_provider import EastMoneyStockProvider
@@ -129,6 +130,7 @@ class StockProviderManager:
             Provider map.
         """
         return {
+            StockProviderName.YAHOO: YahooStockProvider(),
             StockProviderName.EASTMONEY: EastMoneyStockProvider(),
             StockProviderName.TUSHARE: MockStockProvider(),
         }

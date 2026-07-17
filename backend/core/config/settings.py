@@ -64,6 +64,7 @@ class StockProviderName(StrEnum):
     EASTMONEY = "eastmoney"
     SINA = "sina"
     TENCENT = "tencent"
+    YAHOO = "yahoo"
 
 
 class DatabaseEngine(StrEnum):
@@ -293,6 +294,7 @@ class StockDataSettings(BaseAppSettings):
     stock_default_provider: StockProviderName = Field(default=StockProviderName.AKSHARE)
     stock_provider_priority: Any = Field(
         default_factory=lambda: [
+            StockProviderName.YAHOO,
             StockProviderName.AKSHARE,
             StockProviderName.EASTMONEY,
             StockProviderName.SINA,
