@@ -11,7 +11,10 @@
           <n-input-number v-model:value="lookbackDays" :min="20" :max="1000" placeholder="回溯天数" />
         </n-grid-item>
         <n-grid-item>
-          <n-button type="primary" @click="doAnalysis" :loading="loading" block>开始分析</n-button>
+          <n-space>
+          <n-button type="primary" @click="doAnalysis" :loading="loading">开始分析</n-button>
+          <n-button @click="downloadReport" :disabled="!stockStore.analysisResult" ghost>下载报告</n-button>
+        </n-space>
         </n-grid-item>
       </n-grid>
     </n-card>
@@ -63,5 +66,16 @@ async function doAnalysis() {
   klineData.value = stockStore.klineData;
   loading.value = false;
 }
-onMounted(() => { if (route.query.symbol) doAnalysis(); });
+
+
+function downloadReport() {
+  if (!stockStore.analysisResult?.report_markdown) return;
+  var blob = new Blob([stockStore.analysisResult.report_markdown], { type: "text/markdown;charset=utf-8" });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement("a");
+  a.href = url;
+  a.download = "analysis_" + symbol.value + "_" + market.value + "_" + lookbackDays.value + "d.md";
+  a.click();
+  URL.revokeObjectURL(url);
+}
 </script>
