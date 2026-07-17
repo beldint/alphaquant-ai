@@ -36,3 +36,23 @@ export async function analyzeStock(symbol: string, market = 'A', lookbackDays = 
   const { data } = await apiClient.post('/analysis/stock', { symbol, market, lookback_days: lookbackDays, model: model || undefined, api_base_url: apiBaseUrl || undefined, api_key: apiKey || undefined });
   return data;
 }
+
+/* Scoring */
+export interface StockScoreItem {
+  symbol: string;
+  name: string;
+  total_score: number;
+  tech_score: number;
+  volume_score: number;
+  fundamental_score: number;
+  valuation_score: number;
+  sentiment_score: number;
+  summary: string;
+  strengths: string[];
+  risks: string[];
+  suggestion: string;
+}
+export async function getStockScore(symbol: string, market = 'A'): Promise<ApiResponse<StockScoreItem>> {
+  const { data } = await apiClient.get('/stocks/' + symbol + '/score', { params: { market } });
+  return data;
+}
