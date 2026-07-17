@@ -6,6 +6,7 @@ Python Version: 3.11.9
 """
 
 from __future__ import annotations
+from typing import Any
 
 from enum import StrEnum
 from functools import lru_cache
@@ -13,7 +14,6 @@ from pathlib import Path
 from typing import Any, Literal
 
 from pydantic import (
-    Any,
     AnyUrl,
     AnyHttpUrl,
     Field,
