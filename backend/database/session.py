@@ -27,7 +27,6 @@ from backend.core.exceptions import DatabaseException
 engine: AsyncEngine = create_async_engine(
     settings.sqlalchemy_database_url,
     echo=settings.database_echo,
-    poolclass=None,
     connect_args={"check_same_thread": False, },
 )
 
