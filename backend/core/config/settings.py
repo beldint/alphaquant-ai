@@ -127,10 +127,10 @@ class SecuritySettings(BaseAppSettings):
     cors_allowed_origins: Any = Field(
         default_factory=lambda: ["http://localhost:5173", "http://127.0.0.1:5173"],
     )
-    cors_allowed_methods: list[str] = Field(
+    cors_allowed_methods: Any = Field(
         default_factory=lambda: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     )
-    cors_allowed_headers: list[str] = Field(default_factory=lambda: ["*"])
+    cors_allowed_headers: Any = Field(default_factory=lambda: ["*"])
     cors_allow_credentials: bool = Field(default=True)
     csrf_enabled: bool = Field(default=True)
     csrf_cookie_name: str = Field(default="aq_csrf_token", min_length=1)
@@ -344,7 +344,7 @@ class CelerySettings(BaseAppSettings):
     celery_result_backend: RedisDsn | str = Field(default="redis://localhost:6379/2")
     celery_task_serializer: Literal["json"] = Field(default="json")
     celery_result_serializer: Literal["json"] = Field(default="json")
-    celery_accept_content: list[Literal["json"]] = Field(default_factory=lambda: ["json"])
+    celery_accept_content: Any = Field(default_factory=lambda: ["json"])
     celery_timezone: str = Field(default="Asia/Shanghai", min_length=1)
     celery_enable_utc: bool = Field(default=False)
     celery_task_time_limit_seconds: int = Field(default=300, ge=30)
