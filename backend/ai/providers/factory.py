@@ -109,9 +109,12 @@ class AIProviderFactory:
         Raises:
             ConfigurationException: If the API key is missing.
         """
-        env_key = os.environ.get(str(self.settings.__class__.__name__).lower()+"_api_key","")
-        actual_key = api_key if api_key and api_key.get_secret_value().strip() else None
-        if actual_key is None and not env_key:
+        import os as _env_os
+        _env_n = provider_name.value.upper() + "_API_KEY"
+        _env_v = _env_os.environ.get(_env_n, "")
+        if _env_v:
+            api_key = SecretStr(_env_v)
+        elif api_key is None or not api_key.get_secret_value().strip():
             raise ConfigurationException(
                 "AI provider API key is not configured",
                 setting_name=f"{provider_name.value}_api_key",
