@@ -127,7 +127,7 @@ class StockProviderManager:
             Provider map.
         """
         return {
-            StockProviderName.TUSHARE: MockStockProvider(),,
+            StockProviderName.TUSHARE: MockStockProvider(),
         }
 
     async def _execute_with_failover(
