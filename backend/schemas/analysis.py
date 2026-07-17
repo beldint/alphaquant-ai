@@ -26,6 +26,9 @@ class StockAnalysisRequest(ORMModel):
     include_announcements: bool = Field(default=True)
     include_financials: bool = Field(default=True)
     lookback_days: int = Field(default=120, ge=20, le=1000)
+    model: str | None = Field(default=None)
+    api_base_url: str | None = Field(default=None)
+    api_key: str | None = Field(default=None)
 
 
 class StockAnalysisResponse(ORMModel):
