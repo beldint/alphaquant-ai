@@ -166,7 +166,7 @@ class DatabaseSettings(BaseAppSettings):
 
     database_engine: DatabaseEngine = Field(default=DatabaseEngine.POSTGRESQL)
     database_url: str = Field(
-        default="sqlite+aiosqlite:///./alphaquant.db",
+        default="sqlite+aiosqlite:////tmp/alphaquant.db",
     )
     database_echo: bool = Field(default=False)
     database_pool_size: int = Field(default=10, ge=1, le=100)
