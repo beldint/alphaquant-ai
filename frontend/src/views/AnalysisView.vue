@@ -32,7 +32,7 @@
 {{ aiModel && aiModel !== '__custom__' ? (getProviderUrl(aiModel) ? '默认 API 地址: ' + getProviderUrl(aiModel) : '') : '选择模型后自动填入默认 API 地址' }}
           </n-p>
           <n-space justify="end" class="mt-6">
-            <n-button size="tiny" quaternary @click="clearConfig">清除已保存配置</n-button>
+            <n-button size="tiny" quaternary @click="clearConfig">清除所有本地数据</n-button>
           </n-space>
         </n-collapse-item>
       </n-collapse>
