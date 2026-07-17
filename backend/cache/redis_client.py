@@ -89,8 +89,8 @@ class RedisCache:
         """
         try:
             return int(await self.redis.delete(key))
-        except RedisError as exc:
-            logger.exception("Failed to delete cache key={key}", key=key)
+        except Exception as exc:
+            logger.warning("Failed to delete cache key={key}", key=key)
             raise CacheException(key=key, cause=exc) from exc
 
     async def exists(self, key: str) -> bool:
