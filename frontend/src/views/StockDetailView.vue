@@ -7,7 +7,6 @@
           {{ isWatched ? '已自选' : '加自选' }}
         </n-button>
         <n-button size="small" type="success" ghost @click="goToAnalysis">AI分析</n-button>
-        <n-button size="small" ghost @click="downloadReport">下载报告</n-button>
       </n-space>
     </div>
     <n-grid :cols="4" :x-gap="16" class="mb-24" v-if="quote">
@@ -45,10 +44,6 @@ const klinePeriod = ref('1M');
 const isWatched = computed(() => watchlistStore.isInWatchlist(symbol.value));
 function toggleWatchlist() { if (isWatched.value) watchlistStore.remove(symbol.value); else watchlistStore.add(symbol.value, stockName.value); }
 function goToAnalysis() { router.push({ name: 'analysis', query: { symbol: symbol.value, market: 'A' } }); }
-async function downloadReport() {
-  const url = window.location.origin + '/api/v1/analysis/download?symbol=' + symbol.value + '&market=A&lookback_days=120';
-  window.open(url, '_blank');
-}
 function formatVolume(v) { if (v >= 1e8) return (v / 1e8).toFixed(2) + '亿'; if (v >= 1e4) return (v / 1e4).toFixed(2) + '万'; return v.toFixed(0); }
 function switchPeriod(p) {
   klinePeriod.value = p;
