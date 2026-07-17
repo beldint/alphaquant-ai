@@ -49,8 +49,10 @@ class EastMoneyStockProvider(StockProvider):
     provider_name = StockProviderName.EASTMONEY
 
     def __init__(self) -> None:
-        self._http = httpx.AsyncClient(timeout=15, headers={'User-Agent': 'Mozilla/5.0'})
+        self._http = httpx.AsyncClient(timeout=3, headers={'User-Agent': 'Mozilla/5.0'})
+        self._http2 = httpx.AsyncClient(timeout=3, headers={'User-Agent': 'Mozilla/5.0'})
         self._stock_cache: dict[str, StockIdentity] | None = None
+        self._proxy_available = True
 
     async def search_stocks(self, keyword: str, market: Market = 'A') -> list[StockIdentity]:
         if not self._stock_cache:
@@ -69,7 +71,7 @@ class EastMoneyStockProvider(StockProvider):
     async def _load_stock_list(self) -> None:
         try:
             params = {'pn': 1, 'pz': 6000, 'po': 1, 'np': 1, 'fltt': 2, 'invt': 2,
-                      'fs': 'm:0+t:6,m:0+t:80,m:1+t:2,m:1+t:23', 'fields': 'f12,f14,f20' }
+                      'fs': 'm:0+t:6,m:0+t:80,m:1+t:2,m:1+t:23', 'fields': 'f12,f14' }
             resp = await self._http.get(EM_STOCK_LIST_URL, params=params)
             data = resp.json()
             items = (data.get('data') or {}).get('diff') or []
@@ -82,7 +84,7 @@ class EastMoneyStockProvider(StockProvider):
                 ind = {6: '银行', 7: '房地产', 8: '综合', 9: '建筑材料', 10: '建筑装饰', 11: '建筑装饰', 12: '房地产', 13: '房地产', 14: '房地产', 15: '房地产'}
                 cache[code] = StockIdentity(
                     symbol=code, name=name, market='A',
-                    exchange=_exchange(code), industry=''
+                    exchange=_exchange(code), industry=str(item.get('f20', ''))
                 )
             self._stock_cache = cache
             logger.info("Loaded %d stocks from East Money", len(cache))
