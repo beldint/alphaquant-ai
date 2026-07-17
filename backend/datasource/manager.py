@@ -19,6 +19,7 @@ from backend.core.config.settings import StockProviderName
 from backend.core.exceptions import ConfigurationException, StockException
 from backend.datasource.providers.akshare_provider import AKShareProvider
 from backend.datasource.providers.mock_provider import MockStockProvider
+from backend.datasource.providers.eastmoney_provider import EastMoneyStockProvider
 from backend.datasource.providers.base import (
     KlineBar,
     Market,
@@ -127,6 +128,7 @@ class StockProviderManager:
             Provider map.
         """
         return {
+            StockProviderName.EASTMONEY: EastMoneyStockProvider(),
             StockProviderName.TUSHARE: MockStockProvider(),
         }
 
