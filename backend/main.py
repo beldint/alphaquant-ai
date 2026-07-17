@@ -46,6 +46,24 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
         async with engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)
         logger.info("Database tables auto-created")
+        try:
+            from backend.database.session import async_session
+            from backend.models.user import User
+            from sqlalchemy import select
+            from passlib.hash import bcrypt
+            import os
+            _env_user = os.environ.get("DEFAULT_USERNAME", "admin")
+            _env_email = os.environ.get("DEFAULT_EMAIL", "admin@example.com")
+            _env_pass = os.environ.get("DEFAULT_PASSWORD", "admin123")
+            async with async_session() as _s:
+                _r = await _s.execute(select(User).where(User.username == _env_user))
+                if not _r.scalar_one_or_none():
+                    _u = User(username=_env_user, email=_env_email, hashed_password=bcrypt.hash(_env_pass), is_superuser=True)
+                    _s.add(_u)
+                    await _s.commit()
+                    logger.info("Default user created: {user}", user=_env_user)
+        except Exception as _e:
+            logger.warning("Seed user failed: {error}", error=str(_e))
     except Exception as exc:
         logger.warning("Table creation failed: {error}", error=str(exc))
     yield
