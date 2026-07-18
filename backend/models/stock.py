@@ -19,6 +19,8 @@ from backend.database.base import Base, ReprMixin, TimestampMixin, UUIDPrimaryKe
 class Stock(UUIDPrimaryKeyMixin, TimestampMixin, ReprMixin, Base):
     """Stock security master data."""
 
+    __tablename__ = "stocks"
+
     symbol: Mapped[str] = mapped_column(String(32), nullable=False)
     name: Mapped[str] = mapped_column(String(128), nullable=False)
     market: Mapped[str] = mapped_column(String(16), nullable=False)
