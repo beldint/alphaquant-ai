@@ -8,6 +8,14 @@ export const useWatchlistStore = defineStore('watchlist', () => {
   const isInWatchlist = computed(() => (symbol: string) => items.value.some(i => i.symbol === symbol));
   function add(symbol: string, name: string, market = 'A') { if (!isInWatchlist.value(symbol)) { items.value.push({ symbol, name, market, addedAt: new Date().toISOString() }); save(); } }
   function remove(symbol: string) { items.value = items.value.filter(i => i.symbol !== symbol); save(); }
+  function toggle(symbol: string, name: string, market = 'A'): boolean {
+    if (isInWatchlist.value(symbol)) {
+      remove(symbol);
+      return false;
+    }
+    add(symbol, name, market);
+    return true;
+  }
   load();
-  return { items, isInWatchlist, add, remove };
+  return { items, isInWatchlist, add, remove, toggle };
 });

@@ -32,27 +32,27 @@
           <n-statistic label="综合评分" :value="stockScore.total_score" :tabular-nums="true">
             <template #suffix>/100</template>
           </n-statistic>
-          <n-progress type="line" :percentage="stockScore.total_score" :height="8" :border-radius="4" :color="scoreColor(stockScore.total_score)" />
+          <n-progress type="line" :percentage="roundTo2(stockScore.total_score)" :height="8" :border-radius="4" :color="scoreColor(stockScore.total_score)" />
         </n-grid-item>
         <n-grid-item>
           <n-statistic label="基本面(30分)" :value="stockScore.fundamental_score.toFixed(1)" :tabular-nums="true" />
-          <n-progress type="line" :percentage="stockScore.fundamental_score / 30 * 100" :height="6" :border-radius="4" color="#f0a020" />
+          <n-progress type="line" :percentage="roundTo2(stockScore.fundamental_score / 30 * 100)" :height="6" :border-radius="4" color="#f0a020" />
         </n-grid-item>
         <n-grid-item>
           <n-statistic label="偿债能力(20分)" :value="stockScore.solvency_score.toFixed(1)" :tabular-nums="true" />
-          <n-progress type="line" :percentage="stockScore.solvency_score / 20 * 100" :height="6" :border-radius="4" color="#2080f0" />
+          <n-progress type="line" :percentage="roundTo2(stockScore.solvency_score / 20 * 100)" :height="6" :border-radius="4" color="#2080f0" />
         </n-grid-item>
         <n-grid-item>
           <n-statistic label="技术趋势(20分)" :value="stockScore.technical_score.toFixed(1)" :tabular-nums="true" />
-          <n-progress type="line" :percentage="stockScore.technical_score / 20 * 100" :height="6" :border-radius="4" color="#18a058" />
+          <n-progress type="line" :percentage="roundTo2(stockScore.technical_score / 20 * 100)" :height="6" :border-radius="4" color="#18a058" />
         </n-grid-item>
         <n-grid-item>
           <n-statistic label="估值(15分)" :value="stockScore.valuation_score.toFixed(1)" :tabular-nums="true" />
-          <n-progress type="line" :percentage="stockScore.valuation_score / 15 * 100" :height="6" :border-radius="4" color="#8a2be2" />
+          <n-progress type="line" :percentage="roundTo2(stockScore.valuation_score / 15 * 100)" :height="6" :border-radius="4" color="#8a2be2" />
         </n-grid-item>
         <n-grid-item>
           <n-statistic label="风险(15分)" :value="stockScore.risk_score.toFixed(1)" :tabular-nums="true" />
-          <n-progress type="line" :percentage="stockScore.risk_score / 15 * 100" :height="6" :border-radius="4" color="#d03050" />
+          <n-progress type="line" :percentage="roundTo2(stockScore.risk_score / 15 * 100)" :height="6" :border-radius="4" color="#d03050" />
         </n-grid-item>
       </n-grid>
 
@@ -166,6 +166,11 @@ function fmtNum(value: any) {
   return Number.isFinite(numeric) ? numeric.toFixed(2) : String(value);
 }
 
+function roundTo2(value: number): number {
+  if (!Number.isFinite(value)) return 0;
+  return Math.round(value * 100) / 100;
+}
+
 async function fetchFinancials() {
   try {
     const response = await getFinancials(symbol.value);
@@ -177,8 +182,12 @@ async function fetchFinancials() {
 
 const isWatched = computed(() => watchlistStore.isInWatchlist(symbol.value));
 function toggleWatchlist() {
-  if (isWatched.value) watchlistStore.remove(symbol.value);
-  else watchlistStore.add(symbol.value, stockName.value);
+  const name = quote.value?.name || stockName.value || symbol.value;
+  const market = quote.value?.market || 'A';
+  const added = watchlistStore.toggle(symbol.value, name, market);
+  if (added) {
+    router.push({ name: 'watchlist' });
+  }
 }
 function goToFinancials() { router.push({ name: 'financials', params: { symbol: symbol.value } }); }
 function goToAnalysis() { router.push({ name: 'analysis', query: { symbol: symbol.value, market: 'A' } }); }
