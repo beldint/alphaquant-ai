@@ -101,8 +101,48 @@ function onModelChange(value: string): void {
   }
 }
 function clearConfig(): void { aiModel.value = 'deepseek-chat'; aiCustom.value = ''; aiBaseUrl.value = ''; aiApiKey.value = ''; localStorage.removeItem('ai_model'); localStorage.removeItem('ai_custom'); localStorage.removeItem('ai_base_url'); localStorage.removeItem('ai_api_key'); message.success('已清除 AI 配置'); }
-function downloadReport(): void {}
-function downloadHtml(): void {}
+function downloadReport(): void {
+  var md = stockStore.analysisResult?.report_markdown;
+  if (!md) { message.warning("暂无分析报告可下载"); return; }
+  var symbol = stockStore.analysisResult.symbol;
+  var date = stockStore.analysisResult.data_timestamp.slice(0, 10);
+  var blob = new Blob([md], { type: "text/markdown;charset=utf-8" });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement("a");
+  a.href = url;
+  a.download = "分析报告_" + symbol + "_" + date + ".md";
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  message.success("下载完成");
+}
+
+function downloadHtml(): void {
+  var md = stockStore.analysisResult?.report_markdown;
+  if (!md) { message.warning("暂无分析报告可下载"); return; }
+  var symbol = stockStore.analysisResult.symbol;
+  var date = stockStore.analysisResult.data_timestamp.slice(0, 10);
+  var htmlBody = md
+    .replace(/### (.+)/g, "<h3>$1</h3>")
+    .replace(/## (.+)/g, "<h2>$1</h2>")
+    .replace(/# (.+)/g, "<h1>$1</h1>")
+    .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
+    .replace(/\*(.+?)\*/g, "<em>$1</em>")
+    .replace(/^- (.+)$/gm, "<li>$1</li>")
+    .replace(/\n/g, "<br/>");
+  var fullHtml = "<!DOCTYPE html>\n<html lang=\"zh-CN\">\n<head>\n<meta charset=\"UTF-8\">\n<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n<title>" + symbol + " 分析报告<\/title>\n<style>\nbody{font-family:-apple-system,BlinkMacSystemFont,sans-serif;max-width:800px;margin:20px auto;padding:20px;line-height:1.8;color:#333;font-size:15px}\nh1{color:#111;border-bottom:2px solid #1890ff;padding-bottom:8px;font-size:22px}\nh2{color:#222;border-bottom:1px solid #e8e8e8;padding-bottom:6px;margin-top:24px}\nh3{color:#333;border-left:3px solid #1890ff;padding-left:10px;margin-top:20px}\nstrong{color:#1890ff}\nli{margin-left:20px;margin-bottom:4px}\n<\/style>\n<\/head>\n<body>\n" + htmlBody + "\n</body>\n</html>";
+  var blob = new Blob([fullHtml], { type: "text/html;charset=utf-8" });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement("a");
+  a.href = url;
+  a.download = "分析报告_" + symbol + "_" + date + ".html";
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  message.success("下载完成");
+}
 async function doAnalysis(): Promise<void> {
   if (!symbol.value.trim()) { message.warning('请输入股票代码'); return; }
   loading.value = true; errorMessage.value = ''; localStorage.setItem('ai_last_symbol', symbol.value);
