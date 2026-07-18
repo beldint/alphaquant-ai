@@ -12,10 +12,32 @@ import asyncio
 from fastapi import APIRouter, Query, Response
 
 from backend.core.responses import APIResponse, build_success_response
-from backend.schemas.analysis import StockAnalysisRequest, StockAnalysisResponse
+from backend.schemas.analysis import DownloadContentRequest, StockAnalysisRequest, StockAnalysisResponse
 from backend.services.analysis_service import analysis_service
 
 router = APIRouter(prefix="/analysis", tags=["analysis"])
+
+
+
+
+@router.post("/download-content")
+async def download_content(
+    request: DownloadContentRequest,
+) -> Response:
+    """
+    Download arbitrary content as a file attachment.
+    This endpoint exists because some environments (embedded browsers, webviews)
+    block Blob/URL.createObjectURL for programmatic downloads.
+    """
+    import os
+    safe_name = os.path.basename(request.filename) or "download"
+    return Response(
+        content=request.content,
+        media_type=request.content_type,
+        headers={
+            "Content-Disposition": f'attachment; filename="{safe_name}"'
+        },
+    )
 
 
 @router.post("/stock", response_model=APIResponse[StockAnalysisResponse])

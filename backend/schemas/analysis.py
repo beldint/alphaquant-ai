@@ -1,4 +1,4 @@
-"""
+﻿"""
 Project: AlphaQuant AI
 File: backend/schemas/analysis.py
 Description: AI stock analysis request and response schemas.
@@ -15,6 +15,13 @@ from pydantic import Field
 from backend.core.config.settings import AIProviderName
 from backend.schemas.common import ORMModel
 
+
+class DownloadContentRequest(ORMModel):
+    """Request schema for downloading content as file."""
+
+    content: str = Field(...)
+    filename: str = Field(...)
+    content_type: str = Field(default="text/markdown")
 
 class StockAnalysisRequest(ORMModel):
     """Request schema for AI stock analysis."""
@@ -59,4 +66,5 @@ class StockAnalysisResponse(ORMModel):
     technical_summary: dict[str, object]
     risk_summary: dict[str, object]
     data_timestamp: datetime
+
 
