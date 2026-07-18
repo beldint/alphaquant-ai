@@ -14,9 +14,15 @@
       <n-grid :cols="2" :x-gap="12" :y-gap="12" responsive="screen">
         <n-grid-item v-for="(item, idx) in techItems" :key="idx">
           <div class="indicator-card">
-            <div class="indicator-label">{{ item.label }}</div>
+            <div class="indicator-label">{{ item.label }}
+              <n-tooltip trigger="hover" placement="top">
+                <template #trigger>
+                  <span class="info-icon">ⓘ</span>
+                </template>
+                <span style="font-size:12px">{{ item.desc }}</span>
+              </n-tooltip>
+            </div>
             <div class="indicator-value">{{ item.value }}</div>
-            <div class="indicator-desc">{{ item.desc }}</div>
           </div>
         </n-grid-item>
       </n-grid>
@@ -262,23 +268,35 @@ onUnmounted(function() {
 .indicator-card {
   background: #f9f9f9;
   border-radius: 6px;
-  padding: 10px 12px;
+  padding: 8px 10px;
   transition: background 0.2s;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 52px;
 }
 .indicator-card:hover {
   background: #f0f5ff;
 }
 .indicator-label {
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 600;
-  color: #555;
-  margin-bottom: 4px;
+  color: #888;
+  margin-bottom: 2px;
+  display: flex;
+  align-items: center;
+  gap: 3px;
 }
 .indicator-value {
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 700;
   color: #333;
-  margin-bottom: 4px;
+}
+.info-icon {
+  cursor: help;
+  color: #bbb;
+  font-size: 10px;
+  line-height: 1;
 }
 .indicator-desc {
   font-size: 11px;
