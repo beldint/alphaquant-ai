@@ -19,6 +19,7 @@ from backend.ai.providers.factory import AIProviderFactory
 from backend.cache.redis_client import redis_cache
 from backend.core.config import settings
 from backend.core.config.settings import AIProviderName
+from backend.core.exceptions import AlphaQuantException
 from backend.datasource.providers.base import Market
 from backend.datasource.providers.cninfo_provider import CninfoProvider
 from backend.indicators.calculator import IndicatorCalculator
@@ -113,18 +114,45 @@ class AnalysisService:
             **self._build_risk_summary(indicator_frame),
             "official_disclosure": official_risk_summary,
         }
-        report_markdown = await self._generate_report(
-            symbol=symbol,
-            market=market,
-            objective_data=objective_data,
-            technical_summary=technical_summary,
-            financial_summary=financial_summary,
-            risk_summary=risk_summary,
-            provider=selected_provider,
-            model=selected_model,
-            api_base_url=api_base_url,
-            api_key=api_key,
-        )
+        try:
+            report_markdown = await self._generate_report(
+                symbol=symbol,
+                market=market,
+                objective_data=objective_data,
+                technical_summary=technical_summary,
+                financial_summary=financial_summary,
+                risk_summary=risk_summary,
+                provider=selected_provider,
+                model=selected_model,
+                api_base_url=api_base_url,
+                api_key=api_key,
+            )
+        except AlphaQuantException as exc:
+            logger.warning(
+                "AI analysis provider unavailable, using fallback report: "
+                "symbol={symbol} provider={provider} error={error}",
+                symbol=symbol,
+                provider=selected_provider.value,
+                error=str(exc),
+            )
+            risk_summary = {
+                **risk_summary,
+                "ai_fallback": {
+                    "enabled": True,
+                    "provider": selected_provider.value,
+                    "model": selected_model,
+                    "reason": exc.code.value,
+                    "message": exc.message,
+                },
+            }
+            report_markdown = self._build_fallback_report(
+                symbol=symbol,
+                market=market,
+                objective_data=objective_data,
+                technical_summary=technical_summary,
+                financial_summary=financial_summary,
+                risk_summary=risk_summary,
+            )
         response = StockAnalysisResponse(
             symbol=symbol,
             market=market,
@@ -143,6 +171,97 @@ class AnalysisService:
                 ttl_seconds=settings.ai_analysis_cache_ttl_seconds,
             )
         return response
+
+    def _build_fallback_report(
+        self,
+        *,
+        symbol: str,
+        market: Market,
+        objective_data: dict[str, object],
+        technical_summary: dict[str, object],
+        financial_summary: dict[str, object],
+        risk_summary: dict[str, object],
+    ) -> str:
+        """
+        Build a deterministic Markdown report when AI completion is unavailable.
+
+        Args:
+            symbol: Stock symbol.
+            market: Market identifier.
+            objective_data: Objective market data.
+            technical_summary: Calculated technical signals.
+            financial_summary: Financial summary.
+            risk_summary: Risk and fallback summary.
+
+        Returns:
+            Markdown analysis report based only on objective data.
+        """
+        quote = objective_data.get("quote")
+        quote_data = quote if isinstance(quote, dict) else {}
+        name = quote_data.get("name") or symbol
+        price = _format_number(quote_data.get("price"))
+        pct_change = _format_number(quote_data.get("pct_change"))
+        latest_close = _format_number(technical_summary.get("latest_close"))
+        ma_5 = _format_number(technical_summary.get("ma_5"))
+        ma_20 = _format_number(technical_summary.get("ma_20"))
+        rsi = _format_number(technical_summary.get("rsi"))
+        macd = _format_number(technical_summary.get("macd"))
+        data_points = risk_summary.get("data_points", objective_data.get("kline_count"))
+        fallback_info = risk_summary.get("ai_fallback")
+        fallback_message = (
+            fallback_info.get("message")
+            if isinstance(fallback_info, dict)
+            else "AI provider unavailable"
+        )
+        trend = "震荡"
+        if _is_number(technical_summary.get("latest_close")) and _is_number(
+            technical_summary.get("ma_20")
+        ):
+            trend = (
+                "偏强"
+                if float(technical_summary["latest_close"])
+                >= float(technical_summary["ma_20"])
+                else "偏弱"
+            )
+
+        return "\n".join(
+            [
+                f"# {name}({symbol}) 股票分析报告",
+                "",
+                "## 1. 数据来源与时间",
+                f"- 市场：{market}",
+                f"- K线样本数量：{data_points}",
+                f"- 当前行情：{price}，涨跌幅：{pct_change}%",
+                "- 报告类型：AI 服务不可用时的系统降级分析。",
+                "",
+                "## 2. 趋势分析",
+                f"- 最新收盘/现价参考：{latest_close}",
+                f"- MA5：{ma_5}，MA20：{ma_20}",
+                f"- 趋势判断：{trend}",
+                "",
+                "## 3. 技术指标观察",
+                f"- MACD：{macd}",
+                f"- RSI：{rsi}",
+                f"- 60日高点距离：{_format_number(risk_summary.get('distance_to_60d_high_pct'))}%",
+                f"- 60日低点距离：{_format_number(risk_summary.get('distance_to_60d_low_pct'))}%",
+                "",
+                "## 4. 财务与估值",
+                f"- 财务数据状态：{financial_summary.get('status', 'available')}",
+                f"- PE(TTM)：{_format_number(financial_summary.get('pe_ttm'))}",
+                f"- PB：{_format_number(financial_summary.get('pb'))}",
+                f"- ROE：{_format_number(financial_summary.get('roe'))}",
+                "",
+                "## 5. 风险提示",
+                f"- AI 服务状态：{fallback_message}",
+                f"- 年化波动率：{_format_number(risk_summary.get('annualized_volatility'))}",
+                f"- 最大回撤：{_format_number(risk_summary.get('max_drawdown'))}",
+                "- 当前报告仅基于可用公开行情、技术指标和财务摘要生成。",
+                "",
+                "## 6. 综合判断",
+                "- 若后端 AI Key 或模型服务恢复，建议重新生成完整 AI 分析报告。",
+                "- 当前版本可用于临时查看行情趋势和风险概况，不替代完整投研判断。",
+            ],
+        )
 
     async def _generate_report(
         self,
@@ -396,6 +515,16 @@ def _pct_distance(current: float, anchor: float) -> float | None:
     if anchor == 0:
         return None
     return round((current / anchor - 1) * 100, 2)
+
+
+def _is_number(value: object) -> bool:
+    return isinstance(value, int | float) and pd.notna(value)
+
+
+def _format_number(value: object) -> str:
+    if not _is_number(value):
+        return "无数据"
+    return f"{float(value):.2f}"
 
 
 analysis_service = AnalysisService()
