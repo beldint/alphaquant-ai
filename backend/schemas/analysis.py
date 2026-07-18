@@ -1,4 +1,4 @@
-﻿"""
+"""
 Project: AlphaQuant AI
 File: backend/schemas/analysis.py
 Description: AI stock analysis request and response schemas.
