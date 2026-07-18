@@ -5,7 +5,7 @@ async function handleSearch(kw, market) {
   if (!kw) return null;
   // Try East Money API for full stock search
   try {
-    const r = await fetch("https://searchadapter.eastmoney.com/api/suggest/get_SearchSuggestList?input="+encodeURIComponent(kw)+"&type=14&token=D43BF722C8E33BDC906FB84D85E326E8", {headers:{"User-Agent":"Mozilla/5.0"}});
+    const r = await fetch("https://searchadapter.eastmoney.com", {signal: AbortSignal.timeout ? AbortSignal.timeout(5000) : undefined}/api/suggest/get_SearchSuggestList?input="+encodeURIComponent(kw)+"&type=14&token=D43BF722C8E33BDC906FB84D85E326E8", {headers:{"User-Agent":"Mozilla/5.0"}});
     const j = await r.json();
     if (j && j.Data && Array.isArray(j.Data)) {
       var results = [];
@@ -87,7 +87,7 @@ export async function onRequest(context) {
   if (qm) {
     const sym = qm[1]; const sid = secid(sym);
     try {
-      const r = await fetch("https://push2.eastmoney.com/api/qt/stock/get?secid="+sid+"&fields=f43,f44,f45,f46,f47,f48,f169,f170,f57,f58", {headers:{"User-Agent":"Mozilla/5.0"}});
+      const r = await fetch("https://push2.eastmoney.com", {signal: AbortSignal.timeout ? AbortSignal.timeout(5000) : undefined}/api/qt/stock/get?secid="+sid+"&fields=f43,f44,f45,f46,f47,f48,f169,f170,f57,f58", {headers:{"User-Agent":"Mozilla/5.0"}});
       const j = await r.json(); const d = j.data || {};
       if (d.f43) {
         return emResp({code:0,message:"success",data:{symbol:sym,name:d.f58||sym,market:"A",
@@ -97,7 +97,7 @@ export async function onRequest(context) {
     } catch(e) {}
     // Yahoo Fallback
     try {
-      const r = await fetch("https://query1.finance.yahoo.com/v8/finance/chart/"+yahooSym(sym)+"?interval=1d&range=5d", {headers:{"User-Agent":"Mozilla/5.0"}});
+      const r = await fetch("https://query1.finance.yahoo.com", {signal: AbortSignal.timeout ? AbortSignal.timeout(8000) : undefined}/v8/finance/chart/"+yahooSym(sym)+"?interval=1d&range=5d", {headers:{"User-Agent":"Mozilla/5.0"}});
       const j = await r.json(); const m = j.chart.result[0].meta;
       const close = m.regularMarketPrice, prev = m.chartPreviousClose;
       return emResp({code:0,message:"success",data:{symbol:sym,name:m.symbol||sym,market:"A",
@@ -112,7 +112,7 @@ export async function onRequest(context) {
     const sym = km[1]; const sid = secid(sym);
     var sd = url.searchParams.get("start_date")||""; var ed = url.searchParams.get("end_date")||"";
     try {
-      var r = await fetch("https://push2.eastmoney.com/api/qt/stock/kline/get?secid="+sid+"&klt=101&fqt=1&beg="+sd.replace(/-/g,"")+"&end="+(ed?ed.replace(/-/g,""):""), {headers:{"User-Agent":"Mozilla/5.0"}});
+      var r = await fetch("https://push2.eastmoney.com", {signal: AbortSignal.timeout ? AbortSignal.timeout(5000) : undefined}/api/qt/stock/kline/get?secid="+sid+"&klt=101&fqt=1&beg="+sd.replace(/-/g,"")+"&end="+(ed?ed.replace(/-/g,""):""), {headers:{"User-Agent":"Mozilla/5.0"}});
       var j = await r.json(); var raw = (j.data||{}).klines||[];
       if (raw.length > 0) {
         var result = [];
@@ -127,7 +127,7 @@ export async function onRequest(context) {
     try {
       var range="3mo";
       if(sd){var days=(new Date(ed||new Date())-new Date(sd))/86400000; range=days<=31?"1mo":days<=93?"3mo":days<=183?"6mo":"1y";}
-      var r=await fetch("https://query1.finance.yahoo.com/v8/finance/chart/"+yahooSym(sym)+"?interval=1d&range="+range,{headers:{"User-Agent":"Mozilla/5.0"}});
+      var r=await fetch("https://query1.finance.yahoo.com", {signal: AbortSignal.timeout ? AbortSignal.timeout(8000) : undefined}/v8/finance/chart/"+yahooSym(sym)+"?interval=1d&range="+range,{headers:{"User-Agent":"Mozilla/5.0"}});
       var j=await r.json(); var res=j.chart.result[0]; var ts=res.timestamp||[]; var q=res.indicators.quote[0]; var result=[];
       for(var i=0;i<ts.length;i++){
         var dt=new Date(ts[i]*1000); var ds=dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0')+'-'+String(dt.getDate()).padStart(2,'0');
@@ -145,7 +145,7 @@ export async function onRequest(context) {
 
     if (tsToken) {
       try {
-        const finResp = await fetch("https://api.tushare.pro", {
+        const finResp = await fetch("https://api.tushare.pro", {signal: AbortSignal.timeout ? AbortSignal.timeout(8000) : undefined}, {
           method: "POST",
           headers: {"Content-Type": "application/json"},
           body: JSON.stringify({"token": tsToken, "api_name": "fina_indicator", "params": {"ts_code": sym.startsWith("6") ? sym+".SH" : sym+".SZ", "limit": 1}, "fields": "roe,gross_margin,net_margin,revenue,net_profit,debt_to_assets"})
@@ -173,10 +173,42 @@ export async function onRequest(context) {
       } catch(e) {}
     }
 
+    // Backup: East Money financial data API
+    try {
+      var emSym2 = sym.startsWith("6") ? sym+".SH" : sym+".SZ";
+      var emCode2 = sym.startsWith("6") ? "SH"+sym : "SZ"+sym;
+      var emUrl2 = "https://datacenter.eastmoney.com/securities/api/data/v1/get?reportName=RPT_F10_FINANCE_MAINFINADATA&columns=ALL&filter=(SECUCODE%3D%22"+emSym2+"%22)&pageNumber=1&pageSize=1&sortTypes=-1&sortColumns=REPORT_DATE&source=HSF10&client=PC";
+      var emResp2 = await fetch(emUrl2, {signal: AbortSignal.timeout ? AbortSignal.timeout(8000) : undefined, headers:{"User-Agent":"Mozilla/5.0","Referer":"https://emweb.securities.eastmoney.com/"}});
+      if (emResp2.ok) {
+        var emData2 = await emResp2.json();
+        if (emData2 && emData2.result && emData2.result.data && emData2.result.data.length > 0) {
+          var d2 = emData2.result.data[0];
+          var p2 = (v) => v != null ? Number(Number(v).toFixed(2)) + "%" : null;
+          var n2 = (v) => v != null ? Number(Number(v).toFixed(2)) : null;
+          return emResp({code:0,message:"success",data:{
+            pe_ttm: n2(d2.PE_TTM), pb: n2(d2.PB), market_cap: n2(d2.TOTAL_MARKET_CAP),
+            peg: null, dividend_yield: p2(d2.DIVIDEND_YIELD),
+            roe: p2(d2.ROE_JQ), gross_margin: p2(d2.XSMLL_RATE),
+            net_margin: p2(d2.XSJLR_RATE), revenue: n2(d2.TOTAL_OPERATE_INCOME),
+            revenue_growth: p2(d2.YOY_OPERATE_INCOME), net_profit: n2(d2.NET_PROFIT_ATSOPC),
+            deducted_net_profit: n2(d2.DEDUCTED_NET_PROFIT),
+            current_ratio: n2(d2.CURRENT_RATIO), quick_ratio: n2(d2.QUICK_RATIO),
+            debt_ratio: p2(d2.DEBT_ASSET_RATIO),
+            operating_cashflow: n2(d2.NET_CASH_FLOW_OPERATE),
+            cash_equiv: n2(d2.CASH_EQUIVALENTS), total_debt: n2(d2.TOTAL_LIABILITIES),
+            inventory_turnover: n2(d2.INVENTORY_TURNOVER_RATE),
+            ar_turnover: n2(d2.AR_TURNOVER_RATE), goodwill: n2(d2.GOODWILL_NET),
+            pledge_ratio: p2(d2.PLEDGE_RATIO), major_reduction: d2.MAJOR_REDUCTION||null,
+            auditor_change: d2.AUDITOR_CHANGE||null, report_date: d2.REPORT_DATE||null
+          }});
+        }
+      }
+    } catch(e) {}
+
     // Fallback to Yahoo Finance for financials
     try {
       var ySym2 = sym.startsWith("6") ? sym+".SS" : sym+".SZ";
-      const r = await fetch("https://query1.finance.yahoo.com/v10/finance/quoteSummary/"+ySym2+"?modules=price,defaultKeyStatistics,financialData,calendarEvents", {headers:{"User-Agent":"Mozilla/5.0"}});
+      const r = await fetch("https://query1.finance.yahoo.com", {signal: AbortSignal.timeout ? AbortSignal.timeout(8000) : undefined}/v10/finance/quoteSummary/"+ySym2+"?modules=price,defaultKeyStatistics,financialData,calendarEvents", {headers:{"User-Agent":"Mozilla/5.0"}});
       const d = await r.json();
       const q = ((d.quoteSummary||{}).result||[{}])[0]||{};
       const ks = q.defaultKeyStatistics||{}, fd = q.financialData||{}, ce = q.calendarEvents||{};
@@ -207,7 +239,7 @@ export async function onRequest(context) {
   if (scoreMatch) {
     const sym = scoreMatch[1] || "", ySym = sym.match(/^[569]/) ? sym+".SS" : sym+".SZ";
     try {
-      const r = await fetch("https://query1.finance.yahoo.com/v8/finance/chart/"+ySym+"?range=6mo&interval=1d", {headers:{"User-Agent":"Mozilla/5.0"}});
+      const r = await fetch("https://query1.finance.yahoo.com", {signal: AbortSignal.timeout ? AbortSignal.timeout(8000) : undefined}/v8/finance/chart/"+ySym+"?range=6mo&interval=1d", {headers:{"User-Agent":"Mozilla/5.0"}});
       if (r.ok) {
         const d = await r.json(), q = ((d.chart||{}).result||[{}])[0]||{}, c = ((q.indicators||{}).quote||[{}])[0]||{}, cls = (c.close||[]).filter(x=>x!==null);
         if(cls.length>5){let t=15,v=10,f=12,al=3,se=10,l=cls[cls.length-1],p5=cls[cls.length-5],p20=cls[Math.max(0,cls.length-20)];
