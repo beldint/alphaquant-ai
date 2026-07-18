@@ -163,6 +163,197 @@ async function handleSearch(keyword) {
   return [];
 }
 
+function parseAnalysisPayload(requestText, url) {
+  try {
+    const payload = requestText ? JSON.parse(requestText) : {};
+    return payload && typeof payload === "object" ? payload : {};
+  } catch (error) {
+    console.error("analysis payload parse failed", error);
+  }
+  return {
+    symbol: url.searchParams.get("symbol") || "000001",
+    market: url.searchParams.get("market") || "A",
+    lookback_days: Number(url.searchParams.get("lookback_days") || 120),
+    model: url.searchParams.get("model") || "",
+  };
+}
+
+function stockDisplayName(symbol) {
+  const item = STOCKS.find((stock) => stock.symbol === symbol);
+  return item ? item.name : symbol;
+}
+
+function roundNumber(value, digits = 2) {
+  if (!Number.isFinite(value)) return null;
+  return Number(value.toFixed(digits));
+}
+
+async function fetchQuoteFallback(symbol) {
+  try {
+    const response = await fetch(
+      "https://push2.eastmoney.com/api/qt/stock/get?secid=" + secid(symbol) + "&fields=f43,f44,f45,f46,f47,f48,f169,f170,f57,f58",
+      { headers: { "User-Agent": "Mozilla/5.0" } },
+    );
+    const payload = await response.json();
+    const data = payload.data || {};
+    if (data.f43) {
+      return {
+        symbol,
+        name: data.f58 || stockDisplayName(symbol),
+        market: "A",
+        price: data.f43 / 100,
+        change: data.f169 / 100,
+        pct_change: data.f170 / 100,
+        volume: data.f47 || 0,
+        amount: data.f48 || 0,
+        timestamp: new Date().toISOString(),
+        source: "eastmoney",
+      };
+    }
+  } catch (error) {
+    console.error("analysis quote fallback failed", error);
+  }
+  return {
+    symbol,
+    name: stockDisplayName(symbol),
+    market: "A",
+    price: null,
+    change: null,
+    pct_change: null,
+    volume: null,
+    amount: null,
+    timestamp: new Date().toISOString(),
+    source: "edge-fallback",
+  };
+}
+
+async function fetchKlineFallback(symbol, lookbackDays) {
+  const end = new Date();
+  const start = new Date(end.getTime() - Math.max(Number(lookbackDays) || 120, 20) * 86400000);
+  const beg = start.toISOString().slice(0, 10).replace(/-/g, "");
+  const finish = end.toISOString().slice(0, 10).replace(/-/g, "");
+  try {
+    const response = await fetch(
+      "https://push2.eastmoney.com/api/qt/stock/kline/get?secid=" + secid(symbol) + "&klt=101&fqt=1&beg=" + beg + "&end=" + finish,
+      { headers: { "User-Agent": "Mozilla/5.0" } },
+    );
+    const payload = await response.json();
+    const raw = (payload.data || {}).klines || [];
+    return raw.map((row) => {
+      const parts = row.split(",");
+      return {
+        trade_date: parts[0],
+        open_price: parseFloat(parts[1]),
+        close_price: parseFloat(parts[2]),
+        high_price: parseFloat(parts[3]),
+        low_price: parseFloat(parts[4]),
+        volume: parseInt(parts[5], 10),
+        amount: parseFloat(parts[6]),
+      };
+    }).filter((row) => row.trade_date && Number.isFinite(row.close_price));
+  } catch (error) {
+    console.error("analysis kline fallback failed", error);
+  }
+  return [];
+}
+
+function summarizeKline(rows) {
+  const closes = rows.map((row) => row.close_price).filter((value) => Number.isFinite(value));
+  const volumes = rows.map((row) => row.volume).filter((value) => Number.isFinite(value));
+  if (closes.length === 0) {
+    return {
+      trend: "数据不足",
+      close: null,
+      change_pct: null,
+      ma5: null,
+      ma20: null,
+      high: null,
+      low: null,
+      avg_volume: null,
+    };
+  }
+  const last = closes[closes.length - 1];
+  const first = closes[0];
+  const sliceAverage = (items, count) => items.slice(-Math.min(count, items.length)).reduce((sum, value) => sum + value, 0) / Math.min(count, items.length);
+  const ma5 = sliceAverage(closes, 5);
+  const ma20 = sliceAverage(closes, 20);
+  let trend = "震荡";
+  if (last > ma5 && ma5 > ma20) trend = "短期偏强";
+  if (last < ma5 && ma5 < ma20) trend = "短期偏弱";
+  return {
+    trend,
+    close: roundNumber(last),
+    change_pct: first ? roundNumber(((last - first) / first) * 100) : null,
+    ma5: roundNumber(ma5),
+    ma20: roundNumber(ma20),
+    high: roundNumber(Math.max(...closes)),
+    low: roundNumber(Math.min(...closes)),
+    avg_volume: volumes.length ? Math.round(volumes.reduce((sum, value) => sum + value, 0) / volumes.length) : null,
+  };
+}
+
+async function buildFallbackAnalysis(payload) {
+  const symbol = String(payload.symbol || "000001").trim() || "000001";
+  const market = String(payload.market || "A");
+  const lookbackDays = Number(payload.lookback_days || payload.lookbackDays || 120);
+  const model = String(payload.model || "edge-fallback");
+  const quote = await fetchQuoteFallback(symbol);
+  const klineRows = await fetchKlineFallback(symbol, lookbackDays);
+  const technical = summarizeKline(klineRows);
+  const dataTimestamp = new Date().toISOString();
+  const priceLine = quote.price == null ? "当前行情暂不可用" : `现价 ${roundNumber(quote.price)}，涨跌幅 ${roundNumber(quote.pct_change || 0)}%`;
+  const report = [
+    `# ${quote.name || stockDisplayName(symbol)}(${symbol}) AI 分析报告`,
+    "",
+    `生成时间：${dataTimestamp}`,
+    `数据来源：Cloudflare Pages 边缘兜底，Railway 后端暂不可用`,
+    "",
+    "## 行情概览",
+    `- ${priceLine}`,
+    `- 回看周期：${lookbackDays} 天，样本数量：${klineRows.length}`,
+    `- 区间涨跌幅：${technical.change_pct == null ? "数据不足" : technical.change_pct + "%"}`,
+    "",
+    "## 技术面",
+    `- 趋势判断：${technical.trend}`,
+    `- MA5：${technical.ma5 ?? "无"}，MA20：${technical.ma20 ?? "无"}`,
+    `- 区间高点：${technical.high ?? "无"}，区间低点：${technical.low ?? "无"}`,
+    `- 平均成交量：${technical.avg_volume ?? "无"}`,
+    "",
+    "## 风险提示",
+    "- 当前报告由边缘兜底逻辑生成，未调用完整 AI 后端和完整财务数据库。",
+    "- Railway 后端恢复后，系统会自动返回完整模型分析报告。",
+    "- 若价格、成交量或财务数据缺失，应等待数据源恢复后重新分析。",
+    "",
+    "## 操作观察",
+    technical.trend === "短期偏强"
+      ? "- 短线趋势相对积极，可继续观察成交量是否同步放大。"
+      : technical.trend === "短期偏弱"
+        ? "- 短线趋势偏弱，优先关注均线修复和止跌信号。"
+        : "- 当前趋势偏震荡，适合结合支撑压力位和成交量变化继续跟踪。",
+  ].join("\n");
+
+  return {
+    symbol,
+    market,
+    provider: "cloudflare-pages-fallback",
+    model,
+    report_markdown: report,
+    objective_data: {
+      quote,
+      kline_points: klineRows.length,
+      fallback: true,
+      origin_error: "railway_bad_gateway",
+    },
+    technical_summary: technical,
+    risk_summary: {
+      data_quality: klineRows.length > 0 ? "partial" : "limited",
+      origin_available: false,
+      retry_recommended: true,
+    },
+    data_timestamp: dataTimestamp,
+  };
+}
+
 export async function onRequest(context) {
   const url = new URL(context.request.url);
   const path = url.pathname;
@@ -179,6 +370,19 @@ export async function onRequest(context) {
   const hdrs = context.request.headers;
   const body = context.request.body;
   const rail = () => railFetch(url, method, hdrs, body);
+
+  if (path === "/api/v1/analysis/stock") {
+    const requestText = await context.request.clone().text().catch(() => "{}");
+    try {
+      const response = await railFetch(url, method, hdrs, method === "GET" || method === "HEAD" ? undefined : requestText);
+      if (response.ok) return response;
+      console.error("railway analysis failed", response.status);
+    } catch (error) {
+      console.error("railway analysis unavailable", error);
+    }
+    const payload = parseAnalysisPayload(requestText, url);
+    return apiResponse({ code: 0, message: "success", data: await buildFallbackAnalysis(payload) });
+  }
 
   if (SEARCH_PATH.test(path)) {
     const keyword = url.searchParams.get("keyword") || "";
