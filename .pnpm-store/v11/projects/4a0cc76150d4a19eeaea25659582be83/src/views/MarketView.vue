@@ -35,7 +35,7 @@ async function doSearch() {
   loading.value = true;
   try {
     var res = await searchStocks(keyword.value.trim(), 'A');
-    if (res.code === 0 && res.data) results.value = res.data;
+    if (res.code === 0 && res.data) { results.value = res.data.map(function(item: any) { return { symbol: item.symbol || item.s || "", name: item.name || item.n || "", market: "A", exchange: item.exchange || item.e || "SZSE", industry: item.industry || null }; }); }
     else results.value = [];
   } catch (e: any) {
     results.value = [];
