@@ -18,10 +18,6 @@ from backend.core.config import Settings, settings
 from backend.core.config.settings import StockProviderName
 from backend.core.exceptions import ConfigurationException, StockException
 from backend.datasource.providers.akshare_provider import AKShareProvider
-from backend.datasource.providers.yahoo_provider import YahooStockProvider
-from backend.datasource.providers.mock_provider import MockStockProvider
-from backend.datasource.providers.eastmoney_provider import EastMoneyStockProvider
-from backend.datasource.providers.eastmoney_provider import EastMoneyStockProvider
 from backend.datasource.providers.base import (
     KlineBar,
     Market,
@@ -29,7 +25,11 @@ from backend.datasource.providers.base import (
     StockIdentity,
     StockProvider,
 )
-
+from backend.datasource.providers.eastmoney_provider import EastMoneyStockProvider
+from backend.datasource.providers.mock_provider import MockStockProvider
+from backend.datasource.providers.sina_provider import SinaStockProvider
+from backend.datasource.providers.tencent_provider import TencentStockProvider
+from backend.datasource.providers.yahoo_provider import YahooStockProvider
 
 ResultT = TypeVar("ResultT")
 
@@ -130,9 +130,13 @@ class StockProviderManager:
             Provider map.
         """
         return {
+            StockProviderName.TENCENT: TencentStockProvider(),
+            StockProviderName.SINA: SinaStockProvider(),
+            StockProviderName.AKSHARE: AKShareProvider(),
             StockProviderName.YAHOO: YahooStockProvider(),
             StockProviderName.EASTMONEY: EastMoneyStockProvider(),
             StockProviderName.TUSHARE: MockStockProvider(),
+            StockProviderName.BAOSTOCK: MockStockProvider(),
         }
 
     async def _execute_with_failover(
@@ -202,4 +206,3 @@ class StockProviderManager:
 
 
 stock_provider_manager = StockProviderManager(settings)
-

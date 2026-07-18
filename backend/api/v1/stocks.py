@@ -7,35 +7,23 @@ Python Version: 3.11.9
 
 from __future__ import annotations
 
-from datetime import date
+from datetime import date, timedelta
 from typing import Literal
 
+import pandas as pd
 from fastapi import APIRouter, Query
 
 from backend.core.responses import APIResponse, build_success_response
-from backend.schemas.stock import QuoteResponse, StockResponse
-from backend.services.stock_service import stock_service
-from backend.services.scoring_service import StockScorer
+from backend.indicators.calculator import IndicatorCalculator
 from backend.schemas.analysis import StockScoreResponse
-
+from backend.schemas.financial import FinancialIndicators
+from backend.schemas.stock import QuoteResponse, StockResponse
+from backend.services.scoring_service import StockScorer, StockScoreResult
+from backend.services.stock_service import stock_service
 
 router = APIRouter(prefix="/stocks", tags=["stocks"])
-def _convert_kline(decimal_fields, bars):
-    """Convert KlineBar Decimal fields to float for JSON serialization."""
-    import json
-    from decimal import Decimal
-    result = []
-    for bar in bars:
-        d = bar.model_dump()
-        for field in decimal_fields:
-            val = d.get(field)
-            if isinstance(val, Decimal):
-                d[field] = float(val)
-            elif isinstance(val, str):
-                d[field] = float(val) if val.replace('.', '', 1).lstrip('-').isdigit() else val
-        result.append(d)
-    return result
-
+KLINE_START_DATE_QUERY = Query(default=None)
+KLINE_END_DATE_QUERY = Query(default=None)
 
 
 @router.get("/search", response_model=APIResponse[list[StockResponse]])
@@ -63,7 +51,9 @@ async def search_stocks(
             exchange=item.exchange,
             industry=item.industry,
             listing_date=None,
-            currency="CNY" if item.market == "A" else "HKD" if item.market == "HK" else "USD",
+            currency=(
+                "CNY" if item.market == "A" else "HKD" if item.market == "HK" else "USD"
+            ),
             status="active",
         )
         for item in stocks
@@ -90,14 +80,32 @@ async def get_quote(
     return build_success_response(QuoteResponse.model_validate(quote.model_dump()))
 
 
+@router.get("/{symbol}/financials", response_model=APIResponse[FinancialIndicators])
+async def get_financial_indicators(
+    symbol: str,
+    market: str = Query(default="A", pattern="^(A)$"),
+) -> APIResponse[FinancialIndicators]:
+    """
+    Get East Money financial, valuation, and capital indicators.
+
+    Args:
+        symbol: Stock symbol.
+        market: Market identifier. Currently A-share only.
+
+    Returns:
+        Financial indicator response.
+    """
+    _ = market
+    indicators = await stock_service.get_financial_indicators(symbol)
+    return build_success_response(indicators)
+
+
 @router.get("/{symbol}/kline", response_model=APIResponse[list[dict[str, object]]])
 async def get_kline(
-
-
     symbol: str,
     market: Literal["A", "HK", "US"] = Query(default="A"),
-    start_date: date | None = Query(default=None),
-    end_date: date | None = Query(default=None),
+    start_date: date | None = KLINE_START_DATE_QUERY,
+    end_date: date | None = KLINE_END_DATE_QUERY,
     adjust: Literal["none", "qfq", "hfq"] = Query(default="qfq"),
 ) -> APIResponse[list[dict[str, object]]]:
     """
@@ -128,35 +136,60 @@ async def get_stock_score(
     symbol: str,
     market: str = Query(default="A", pattern="^(A|HK|US)$"),
 ) -> APIResponse[StockScoreResponse]:
-    """Get 100-point stock score."""
-    from datetime import date, timedelta
-    from backend.datasource.providers.base import KlineBar, Market
-    quote = await stock_service.get_realtime_quote(symbol, market)
+    """
+    Get 100-point stock score.
+
+    Args:
+        symbol: Stock symbol.
+        market: Market identifier.
+
+    Returns:
+        Stock score response.
+    """
+    quote = await stock_service.get_realtime_quote(symbol, market)  # type: ignore[arg-type]
     end = date.today()
     start = end - timedelta(days=120)
-    bars = await stock_service.get_daily_kline(symbol, market=market, start_date=start, end_date=end)
-    import pandas as pd
-    frame = pd.DataFrame([
-        {"trade_date": b.trade_date, "open": float(b.open_price), "high": float(b.high_price),
-         "low": float(b.low_price), "close": float(b.close_price),
-         "volume": float(b.volume), "amount": float(b.amount)} for b in bars
-    ])
-    if not frame.empty:
-        frame = frame.sort_values("trade_date").set_index("trade_date")
-        from backend.indicators.calculator import IndicatorCalculator
-        calc = IndicatorCalculator()
-        ind_frame = calc.calculate_all(frame)
-        scorer = StockScorer()
-        result = scorer.score_from_indicators(ind_frame, symbol=symbol, name=quote.name)
-    else:
-        from backend.services.scoring_service import StockScoreResult
+    bars = await stock_service.get_daily_kline(
+        symbol,
+        market=market,
+        start_date=start,
+        end_date=end,
+    )  # type: ignore[arg-type]
+    frame = pd.DataFrame(
+        [
+            {
+                "trade_date": bar.trade_date,
+                "open": float(bar.open_price),
+                "high": float(bar.high_price),
+                "low": float(bar.low_price),
+                "close": float(bar.close_price),
+                "volume": float(bar.volume),
+                "amount": float(bar.amount),
+            }
+            for bar in bars
+        ],
+    )
+    if frame.empty:
         result = StockScoreResult(symbol=symbol, name=quote.name)
-    return build_success_response(StockScoreResponse(
-        symbol=result.symbol, name=result.name,
-        total_score=result.total_score, tech_score=result.tech_score,
-        volume_score=result.volume_score, fundamental_score=result.fundamental_score,
-        valuation_score=result.valuation_score, sentiment_score=result.sentiment_score,
-        summary=result.summary, strengths=result.strengths,
-        risks=result.risks, suggestion=result.suggestion
-    ))
-
+    else:
+        frame = frame.sort_values("trade_date").set_index("trade_date")
+        indicator_frame = IndicatorCalculator().calculate_all(frame)
+        result = StockScorer().score_from_indicators(
+            indicator_frame, symbol=symbol, name=quote.name
+        )
+    return build_success_response(
+        StockScoreResponse(
+            symbol=result.symbol,
+            name=result.name,
+            total_score=result.total_score,
+            tech_score=result.tech_score,
+            volume_score=result.volume_score,
+            fundamental_score=result.fundamental_score,
+            valuation_score=result.valuation_score,
+            sentiment_score=result.sentiment_score,
+            summary=result.summary,
+            strengths=result.strengths,
+            risks=result.risks,
+            suggestion=result.suggestion,
+        ),
+    )

@@ -13,13 +13,22 @@ from typing import Literal
 from backend.cache.redis_client import redis_cache
 from backend.core.config import settings
 from backend.datasource.manager import stock_provider_manager
-from backend.datasource.providers.base import KlineBar, Market, RealtimeQuote, StockIdentity
+from backend.datasource.providers.base import (
+    KlineBar,
+    Market,
+    RealtimeQuote,
+    StockIdentity,
+)
+from backend.datasource.providers.eastmoney_provider import EastMoneyStockProvider
+from backend.schemas.financial import FinancialIndicators
 
 
 class StockService:
     """Application service for stock data queries."""
 
-    async def search_stocks(self, keyword: str, market: Market = "A") -> list[StockIdentity]:
+    async def search_stocks(
+        self, keyword: str, market: Market = "A"
+    ) -> list[StockIdentity]:
         """
         Search stocks using configured provider failover.
 
@@ -32,7 +41,9 @@ class StockService:
         """
         return await stock_provider_manager.search_stocks(keyword, market)
 
-    async def get_realtime_quote(self, symbol: str, market: Market = "A") -> RealtimeQuote:
+    async def get_realtime_quote(
+        self, symbol: str, market: Market = "A"
+    ) -> RealtimeQuote:
         """
         Fetch realtime quote with short TTL cache.
 
@@ -95,6 +106,31 @@ class StockService:
         )
         return bars
 
+    async def get_financial_indicators(self, symbol: str) -> FinancialIndicators:
+        """
+        Fetch financial and valuation indicators from East Money.
+
+        Args:
+            symbol: Stock symbol.
+
+        Returns:
+            Financial indicator response.
+        """
+        cache_key = f"financials:A:{symbol}"
+        cached = await redis_cache.get_json(cache_key)
+        if isinstance(cached, dict):
+            return FinancialIndicators.model_validate(cached)
+        provider = EastMoneyStockProvider()
+        try:
+            indicators = await provider.get_financial_indicators(symbol)
+        finally:
+            await provider.close()
+        await redis_cache.set_json(
+            cache_key,
+            indicators.model_dump(mode="json"),
+            ttl_seconds=settings.finance_cache_ttl_seconds,
+        )
+        return indicators
+
 
 stock_service = StockService()
-

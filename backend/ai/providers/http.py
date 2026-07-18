@@ -20,6 +20,7 @@ from backend.ai.providers.base import (
 )
 from backend.core.config.settings import AIProviderName
 from backend.core.exceptions import AIException, NetworkException
+from backend.datasource.providers.http_client import build_async_client
 
 
 class OpenAICompatibleProvider(AIProvider):
@@ -46,7 +47,7 @@ class OpenAICompatibleProvider(AIProvider):
         """
         self.provider_name = provider_name
         self.default_model = default_model
-        self.client = httpx.AsyncClient(
+        self.client = build_async_client(
             base_url=base_url.rstrip("/"),
             timeout=timeout_seconds,
             headers={
@@ -143,4 +144,3 @@ class OpenAICompatibleProvider(AIProvider):
                 provider=self.provider_name.value,
             )
         return content
-

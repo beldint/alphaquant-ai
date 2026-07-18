@@ -41,6 +41,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
         import backend.models.user
         import backend.models.analysis
         import backend.models.portfolio
+        import backend.models.research
         import backend.models.watchlist
         from backend.database.session import engine
         async with engine.begin() as conn:

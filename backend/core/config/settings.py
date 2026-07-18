@@ -6,7 +6,6 @@ Python Version: 3.11.9
 """
 
 from __future__ import annotations
-from typing import Any
 
 from enum import StrEnum
 from functools import lru_cache
@@ -14,10 +13,8 @@ from pathlib import Path
 from typing import Any, Literal
 
 from pydantic import (
-    AnyUrl,
     AnyHttpUrl,
     Field,
-    PostgresDsn,
     RedisDsn,
     SecretStr,
     field_validator,
@@ -291,14 +288,14 @@ class StockDataSettings(BaseAppSettings):
     """Unified stock data provider, retry, limit, and cache settings."""
 
     stock_default_market: Literal["A", "HK", "US"] = Field(default="A")
-    stock_default_provider: StockProviderName = Field(default=StockProviderName.AKSHARE)
+    stock_default_provider: StockProviderName = Field(default=StockProviderName.TENCENT)
     stock_provider_priority: Any = Field(
         default_factory=lambda: [
-            StockProviderName.YAHOO,
-            StockProviderName.AKSHARE,
-            StockProviderName.EASTMONEY,
-            StockProviderName.SINA,
             StockProviderName.TENCENT,
+            StockProviderName.SINA,
+            StockProviderName.EASTMONEY,
+            StockProviderName.AKSHARE,
+            StockProviderName.YAHOO,
             StockProviderName.TUSHARE,
             StockProviderName.BAOSTOCK,
         ],
@@ -314,6 +311,7 @@ class StockDataSettings(BaseAppSettings):
     eastmoney_base_url: AnyHttpUrl = Field(default="https://push2.eastmoney.com")
     sina_base_url: AnyHttpUrl = Field(default="https://hq.sinajs.cn")
     tencent_base_url: AnyHttpUrl = Field(default="https://qt.gtimg.cn")
+    cninfo_base_url: AnyHttpUrl = Field(default="http://www.cninfo.com.cn")
 
     @field_validator("stock_provider_priority", mode="before")
     @classmethod
@@ -360,10 +358,27 @@ class SchedulerSettings(BaseAppSettings):
     scheduler_enabled: bool = Field(default=True)
     scheduler_timezone: str = Field(default="Asia/Shanghai", min_length=1)
     quote_refresh_interval_seconds: int = Field(default=5, ge=1)
-    kline_refresh_cron: str = Field(default="0 18 * * 1-5", min_length=1)
-    finance_refresh_cron: str = Field(default="0 2 * * 6", min_length=1)
+    research_default_symbols: Any = Field(
+        default_factory=lambda: ["000001", "600519", "300750"],
+    )
+    after_close_refresh_hour: int = Field(default=18, ge=0, le=23)
+    after_close_refresh_minute: int = Field(default=20, ge=0, le=59)
+    nightly_refresh_hour: int = Field(default=2, ge=0, le=23)
+    nightly_refresh_minute: int = Field(default=0, ge=0, le=59)
+    kline_refresh_cron: str = Field(default="20 18 * * 1-5", min_length=1)
+    finance_refresh_cron: str = Field(default="0 2 * * 1-5", min_length=1)
     news_refresh_interval_seconds: int = Field(default=600, ge=60)
     announcement_refresh_interval_seconds: int = Field(default=1800, ge=60)
+
+    @field_validator("research_default_symbols", mode="before")
+    @classmethod
+    def parse_research_default_symbols(cls, value: Any) -> list[str]:
+        """Parse default personal research symbols from environment variables."""
+        if isinstance(value, str):
+            return [item.strip() for item in value.split(",") if item.strip()]
+        if isinstance(value, list):
+            return [str(item).strip() for item in value if str(item).strip()]
+        raise ValueError("research_default_symbols must be a list or comma-separated string")
 
 
 class WebSocketSettings(BaseAppSettings):
