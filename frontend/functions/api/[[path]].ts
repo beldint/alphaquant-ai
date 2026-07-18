@@ -60,7 +60,7 @@ function apiResponse(data) {
 }
 
 function railFetch(url, method, headers, body) {
-  return fetch("https://web-production-74b0a.up.railway.app" + url.pathname + url.search, {
+  return fetch("https://alphaquant-ai-production.up.railway.app" + url.pathname + url.search, {
     method,
     headers,
     body,
