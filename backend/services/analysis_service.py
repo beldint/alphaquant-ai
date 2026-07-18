@@ -153,6 +153,8 @@ class AnalysisService:
                 financial_summary=financial_summary,
                 risk_summary=risk_summary,
             )
+        # Remove AI-generated text about None fields
+        report_markdown = report_markdown.replace("（所有字段均为None）", "").replace("所有字段均为None", "")
         response = StockAnalysisResponse(
             symbol=symbol,
             market=market,
