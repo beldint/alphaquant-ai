@@ -148,19 +148,20 @@ export async function onRequest(context) {
         const finResp = await fetch("https://api.tushare.pro", {
           method: "POST",
           headers: {"Content-Type": "application/json"},
-          body: JSON.stringify({"apikey": tsToken, "api_name": "fina_indicator", "params": {"ts_code": sym.startsWith("6") ? sym+".SH" : sym+".SZ", "limit": 1}, "fields": "roe,gross_margin,net_margin,revenue,net_profit,debt_to_assets"})
+          body: JSON.stringify({"token": tsToken, "api_name": "fina_indicator", "params": {"ts_code": sym.startsWith("6") ? sym+".SH" : sym+".SZ", "limit": 1}, "fields": "roe,gross_margin,net_margin,revenue,net_profit,debt_to_assets"})
         });
         const finData = await finResp.json();
         var fin = (finData.data||{}).items||[];
         var finRow = fin.length > 0 ? fin[0] : [];
-        if (finRow && finRow[0]) {
+        if (finRow && finRow.length > 1 && typeof finRow[1] === "number") {
           return emResp({code:0,message:"success",data:{
             market_cap: null, pe_ttm: null, pb: null, peg: null, dividend_yield: null,
-            roe: fin[0]?.[0] ? (fin[0][0]*100).toFixed(2) : null,
-            gross_margin: fin[0]?.[1] ? (fin[0][1]*100).toFixed(2) : null,
-            net_margin: fin[0]?.[2] ? (fin[0][2]*100).toFixed(2) : null,
-            revenue: fin[0]?.[3] || null, net_profit: fin[0]?.[4] || null,
-            debt_ratio: fin[0]?.[5] ? (fin[0][5]*100).toFixed(2) : null,
+            roe: finRow[1] != null ? Number(Number(finRow[1]*100).toFixed(2)) + "%" : null,
+            gross_margin: finRow[2] != null ? Number(Number(finRow[2]*100).toFixed(2)) + "%" : null,
+            net_margin: finRow[3] != null ? Number(Number(finRow[3]*100).toFixed(2)) + "%" : null,
+            revenue: finRow[4] != null ? Number(Number(finRow[4]).toFixed(2)) : null,
+            net_profit: finRow[5] != null ? Number(Number(finRow[5]).toFixed(2)) : null,
+            debt_ratio: finRow[6] != null ? Number(Number(finRow[6]*100).toFixed(2)) + "%" : null,
             revenue_growth: null, deducted_net_profit: null,
             current_ratio: null, quick_ratio: null, operating_cashflow: null,
             cash_equiv: null, total_debt: null,
