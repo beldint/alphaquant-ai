@@ -1,5 +1,27 @@
-// Stock list for search (popular A-shares)
-const STOCKS = [
+// === STOCK SEARCH ===
+const SEARCH_PATH = /\/api\/v1\/stocks\/search/;
+
+async function handleSearch(kw, market) {
+  if (!kw) return null;
+  // Try East Money API for full stock search
+  try {
+    const r = await fetch("https://searchadapter.eastmoney.com/api/suggest/get_SearchSuggestList?input="+encodeURIComponent(kw)+"&type=14&token=D43BF722C8E33BDC906FB84D85E326E8", {headers:{"User-Agent":"Mozilla/5.0"}});
+    const j = await r.json();
+    if (j && j.Data && Array.isArray(j.Data)) {
+      var results = [];
+      for (var i=0;i<j.Data.length;i++) {
+        var d = j.Data[i];
+        if (d.Code && d.Name) {
+          var sym = String(d.Code).padStart(6,"0");
+          var exch = d.Code.startsWith("6")||d.Code.startsWith("9") ? "SSE" : "SZSE";
+          results.push({symbol:sym, name:d.Name, market:"A", exchange:exch, industry:null});
+        }
+      }
+      if (results.length > 0) return results;
+    }
+  } catch(e) {}
+  // Fallback to local stock list
+  var stocks = [
   {s:'000001',n:'平安银行',e:'SZSE'},{s:'000002',n:'万科A',e:'SZSE'},{s:'000333',n:'美的集团',e:'SZSE'},
   {s:'000651',n:'格力电器',e:'SZSE'},{s:'000725',n:'京东方A',e:'SZSE'},{s:'000858',n:'五粮液',e:'SZSE'},
   {s:'002007',n:'华兰生物',e:'SZSE'},{s:'002230',n:'科大讯飞',e:'SZSE'},{s:'002236',n:'大华股份',e:'SZSE'},
@@ -20,6 +42,10 @@ const STOCKS = [
   {s:'601088',n:'中国神华',e:'SSE'},{s:'000625',n:'长安汽车',e:'SZSE'},{s:'600745',n:'闻泰科技',e:'SSE'},
   {s:'601766',n:'中国中车',e:'SSE'},{s:'002466',n:'天齐锂业',e:'SZSE'},{s:'002460',n:'赣锋锂业',e:'SZSE'},
 ];
+  var upper = kw.toUpperCase();
+  var results = stocks.filter(function(s) { return s.s.indexOf(upper)>=0 || s.n.indexOf(kw)>=0; });
+  return results.slice(0, 20);
+}
 
 function secid(s) { return s.startsWith("6")||s.startsWith("9") ? "1."+s : "0."+s; }
 function yahooSym(s) { return s.startsWith("6") ? s+".SS" : s+".SZ"; }
@@ -43,6 +69,19 @@ export async function onRequest(context) {
   const body = context.request.body;
   const rail = function() { return railFetch(url,method,hdrs,body); };
 
+  // === STOCK SEARCH: East Money API + local fallback ===
+  if (SEARCH_PATH.test(path)) {
+    const kw = url.searchParams.get("keyword") || "";
+    const market = url.searchParams.get("market") || "A";
+    const results = await handleSearch(kw, market);
+    if (results && results.length > 0) {
+      return emResp({code:0,message:"success",data:results});
+    }
+    const r = await rail();
+    if (r.ok) return r;
+    return emResp({code:0,message:"success",data:results || []});
+  }
+
   // === QUOTE: East Money (A-Share accurate) + Yahoo fallback ===
   const qm = path.match(/\/api\/v1\/stocks\/(\d+)\/quote$/);
   if (qm) {
@@ -56,7 +95,7 @@ export async function onRequest(context) {
           timestamp:new Date().toISOString(),source:"eastmoney"}});
       }
     } catch(e) {}
-    // Fallback: Yahoo Finance
+    // Yahoo Fallback
     try {
       const r = await fetch("https://query1.finance.yahoo.com/v8/finance/chart/"+yahooSym(sym)+"?interval=1d&range=5d", {headers:{"User-Agent":"Mozilla/5.0"}});
       const j = await r.json(); const m = j.chart.result[0].meta;
@@ -84,7 +123,7 @@ export async function onRequest(context) {
         if (result.length > 0) return emResp({code:0,message:"success",data:result});
       }
     } catch(e) {}
-    // Fallback: Yahoo Finance for kline
+    // Yahoo Fallback
     try {
       var range="3mo";
       if(sd){var days=(new Date(ed||new Date())-new Date(sd))/86400000; range=days<=31?"1mo":days<=93?"3mo":days<=183?"6mo":"1y";}
@@ -99,38 +138,26 @@ export async function onRequest(context) {
     return rail();
   }
 
-  // === FINANCIALS
-
-  
   // === FINANCIALS: Tushare API (if token configured) + Yahoo Finance fallback ===
   if (url.pathname.startsWith("/api/v1/stocks/") && url.pathname.endsWith("/financials")) {
     const sym = url.pathname.split("/")[4];
     const tsToken = context.env.TUSHARE_TOKEN || "";
-    
-    // Try Tushare if token available
+
     if (tsToken) {
       try {
-        const tsResp = await fetch("https://api.tushare.pro", {
+        const finResp = await fetch("https://api.tushare.pro", {
           method: "POST",
           headers: {"Content-Type": "application/json"},
-          body: JSON.stringify({"apikey": tsToken, "api_name": "daily", "params": {"ts_code": sym.startsWith("6") ? sym+".SH" : sym+".SZ", "start_date": "", "end_date": "", "limit": 1}, "fields": ""})
+          body: JSON.stringify({"apikey": tsToken, "api_name": "finacial_indicator", "params": {"ts_code": sym.startsWith("6") ? sym+".SH" : sym+".SZ", "limit": 1}, "fields": "roe,gross_margin,net_margin,revenue,net_profit,debt_to_assets"})
         });
-        const tsData = await tsResp.json();
-        if (tsData && tsData.data && tsData.data.items && tsData.data.items.length > 0) {
-          // Got Tushare data - also fetch financial indicators
-          let finResp = await fetch("https://api.tushare.pro", {
-            method: "POST",
-            headers: {"Content-Type": "application/json"},
-            body: JSON.stringify({"apikey": tsToken, "api_name": "finacial_indicator", "params": {"ts_code": sym.startsWith("6") ? sym+".SH" : sym+".SZ", "limit": 1}, "fields": "roe,gross_margin,net_margin,revenue,net_profit,debt_to_assets,e_ps"})
-          });
-          let finData = await finResp.json();
-          let fin = (finData.data||{}).items||[];
-          let finRow = fin.length > 0 ? fin[0] : [];
-          if (!finRow || !finRow[0]) { throw new Error("Tushare financial data empty"); }
-          
+        const finData = await finResp.json();
+        var fin = (finData.data||{}).items||[];
+        var finRow = fin.length > 0 ? fin[0] : [];
+        if (finRow && finRow[0]) {
           return emResp({code:0,message:"success",data:{
             market_cap: null, pe_ttm: null, pb: null, peg: null, dividend_yield: null,
-            roe: fin[0]?.[0] || null, gross_margin: fin[0]?.[1] ? (fin[0][1]*100).toFixed(2) : null,
+            roe: fin[0]?.[0] ? (fin[0][0]*100).toFixed(2) : null,
+            gross_margin: fin[0]?.[1] ? (fin[0][1]*100).toFixed(2) : null,
             net_margin: fin[0]?.[2] ? (fin[0][2]*100).toFixed(2) : null,
             revenue: fin[0]?.[3] || null, net_profit: fin[0]?.[4] || null,
             debt_ratio: fin[0]?.[5] ? (fin[0][5]*100).toFixed(2) : null,
@@ -144,18 +171,18 @@ export async function onRequest(context) {
         }
       } catch(e) {}
     }
-    
-    // Fallback to Yahoo Finance
-    const ySym = sym.match(/^[569]/) ? sym+".SS" : sym+".SZ";
+
+    // Fallback to Yahoo Finance for financials
     try {
-      const r = await fetch("https://query1.finance.yahoo.com/v10/finance/quoteSummary/"+ySym+"?modules=price,defaultKeyStatistics,financialData,calendarEvents", {headers:{"User-Agent":"Mozilla/5.0"}});
+      var ySym2 = sym.startsWith("6") ? sym+".SS" : sym+".SZ";
+      const r = await fetch("https://query1.finance.yahoo.com/v10/finance/quoteSummary/"+ySym2+"?modules=price,defaultKeyStatistics,financialData,calendarEvents", {headers:{"User-Agent":"Mozilla/5.0"}});
       const d = await r.json();
       const q = ((d.quoteSummary||{}).result||[{}])[0]||{};
-      const p = q.price||{}, ks = q.defaultKeyStatistics||{}, fd = q.financialData||{}, ce = q.calendarEvents||{};
+      const ks = q.defaultKeyStatistics||{}, fd = q.financialData||{}, ce = q.calendarEvents||{};
       const raw = (v) => v&&v.raw ? v.raw : null;
       return emResp({code:0,message:"success",data:{
         pe_ttm: raw(ks.trailingPE), pb: raw(ks.priceToBook),
-        market_cap: raw(p.marketCap), peg: raw(ks.pegRatio),
+        market_cap: raw(q.price?.marketCap), peg: raw(ks.pegRatio),
         dividend_yield: raw(ks.dividendYield) ? (raw(ks.dividendYield)*100).toFixed(2) : null,
         roe: raw(ks.returnOnEquity) ? (raw(ks.returnOnEquity)*100).toFixed(2) : null,
         gross_margin: raw(fd.grossMargins) ? (raw(fd.grossMargins)*100).toFixed(2) : null,
@@ -174,7 +201,7 @@ export async function onRequest(context) {
     return rail();
   }
 
-// === SCORE: from Yahoo Finance ===
+  // === SCORE: computed from Yahoo Finance data ===
   const scoreMatch = url.pathname.startsWith('/api/v1/stocks/') && url.pathname.endsWith('/score') ? [null, url.pathname.split('/')[4]] : null;
   if (scoreMatch) {
     const sym = scoreMatch[1] || "", ySym = sym.match(/^[569]/) ? sym+".SS" : sym+".SZ";
@@ -187,13 +214,15 @@ export async function onRequest(context) {
           if(l&&p20){let p=(l-p20)/p20*100;if(p>5){se+=5;t+=7}else if(p>2){se+=3;t+=5}}
           if(cls.length>10){let a5=cls.slice(-5).reduce((a,b)=>a+b,0)/5,a10=cls.slice(-10).reduce((a,b)=>a+b,0)/10;if(a5>a10){t+=5;v+=5}}
           let tot=Math.min(t+v+f+al+se,100),str=[],risk=[];
-          if(t>=22)str.push("√ 技术趋势健康");else if(t<=12)risk.push("× 技术面偏弱");
-          if(se>=15)str.push("√ 短期走势强劲");else if(se<=8)risk.push("× 短期走势偏弱");
+          if(t>=22)str.push("技术趋势健康");else if(t<=12)risk.push("技术面偏弱");
+          if(se>=15)str.push("短期走势强劲");else if(se<=8)risk.push("短期走势偏弱");
           return emResp({code:0,message:"success",data:{symbol:sym,name:sym,total_score:tot,tech_score:Math.min(t,30),volume_score:Math.min(v,20),fundamental_score:Math.min(f,25),valuation_score:Math.min(al,5),sentiment_score:Math.min(se,20),summary:"综合评分 "+tot+"/100",strengths:str,risks:risk,suggestion:tot>=80?"长期配置价值较高":tot>=65?"技术面转好，可分批建仓":tot>=50?"建议观望":"建议回避"}});
         }
       }
     } catch(e) {}
-    return emResp({code:0,message:"success",data:{symbol:sym,name:sym,total_score:50,tech_score:15,volume_score:10,fundamental_score:12,valuation_score:3,sentiment_score:10,summary:"综合评分 50/100",strengths:[],risks:["× 数据来源不可用"],suggestion:"建议观望"}});
+    return emResp({code:0,message:"success",data:{symbol:sym,name:sym,total_score:50,tech_score:15,volume_score:10,fundamental_score:12,valuation_score:3,sentiment_score:10,summary:"综合评分 50/100",strengths:[],risks:["数据源不可用"],suggestion:"建议观望"}});
   }
 
+  // === DEFAULT: proxy to Railway ===
+  return rail();
 }
