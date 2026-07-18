@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div>
     <div class="page-header flex-between">
       <div><h2>AI 分析</h2><p>基于技术指标、财务数据和模型生成股票分析报告</p></div>
@@ -101,28 +101,33 @@ function onModelChange(value: string): void {
   }
 }
 function clearConfig(): void { aiModel.value = 'deepseek-chat'; aiCustom.value = ''; aiBaseUrl.value = ''; aiApiKey.value = ''; localStorage.removeItem('ai_model'); localStorage.removeItem('ai_custom'); localStorage.removeItem('ai_base_url'); localStorage.removeItem('ai_api_key'); message.success('已清除 AI 配置'); }
-function downloadReport(): void {
+const downloadReport = () => {
   var md = stockStore.analysisResult?.report_markdown;
   if (!md) { message.warning("暂无分析报告可下载"); return; }
   var symbol = stockStore.analysisResult.symbol;
   var date = stockStore.analysisResult.data_timestamp.slice(0, 10);
+  var filename = "分析报告_" + symbol + "_" + date + ".md";
   var blob = new Blob([md], { type: "text/markdown;charset=utf-8" });
   var url = URL.createObjectURL(blob);
   var a = document.createElement("a");
   a.href = url;
-  a.download = "分析报告_" + symbol + "_" + date + ".md";
+  a.download = filename;
+  a.style.display = "none";
   document.body.appendChild(a);
   a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
   message.success("下载完成");
+  setTimeout(function() {
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }, 2000);
 }
 
-function downloadHtml(): void {
+const downloadHtml = () => {
   var md = stockStore.analysisResult?.report_markdown;
   if (!md) { message.warning("暂无分析报告可下载"); return; }
   var symbol = stockStore.analysisResult.symbol;
   var date = stockStore.analysisResult.data_timestamp.slice(0, 10);
+  var filename = "分析报告_" + symbol + "_" + date + ".html";
   var htmlBody = md
     .replace(/### (.+)/g, "<h3>$1</h3>")
     .replace(/## (.+)/g, "<h2>$1</h2>")
@@ -136,12 +141,15 @@ function downloadHtml(): void {
   var url = URL.createObjectURL(blob);
   var a = document.createElement("a");
   a.href = url;
-  a.download = "分析报告_" + symbol + "_" + date + ".html";
+  a.download = filename;
+  a.style.display = "none";
   document.body.appendChild(a);
   a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
   message.success("下载完成");
+  setTimeout(function() {
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }, 2000);
 }
 async function doAnalysis(): Promise<void> {
   if (!symbol.value.trim()) { message.warning('请输入股票代码'); return; }

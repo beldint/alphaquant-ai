@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div v-if="report">
     <n-card title="价格趋势图" size="small" class="mb-24">
       <div v-if="klineData && klineData.length > 0">
@@ -10,7 +10,7 @@
       <n-empty v-else description="暂无实时K线数据，无法显示趋势图" />
     </n-card>
 
-    <n-card title="技术指标摘要（每个指标名称都附有通俗解释）" size="small" class="mb-24">
+    <n-card title="技术指标摘要" size="small" class="mb-24">
       <n-grid :cols="2" :x-gap="12" :y-gap="12" responsive="screen">
         <n-grid-item v-for="(item, idx) in techItems" :key="idx">
           <div class="indicator-card">
