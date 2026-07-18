@@ -32,7 +32,7 @@
         <n-grid-item><n-statistic label="数据时间" :value="stockStore.analysisResult.data_timestamp.slice(0, 10)" /></n-grid-item>
         <n-grid-item span="2"><n-statistic label="分析模型" :value="stockStore.analysisResult.model" /></n-grid-item>
       </n-grid>
-      <AnalysisReport :report="stockStore.analysisResult" />
+      
     </template>
   </div>
 </template>
@@ -40,7 +40,7 @@
 import { computed, ref } from 'vue';
 import { useStockStore } from '../stores/stock';
 import { NAlert, NButton, NCard, NCollapse, NCollapseItem, NGrid, NGridItem, NInput, NInputNumber, NP, NSelect, NSpace, NStatistic, useMessage } from 'naive-ui';
-import AnalysisReport from '../components/AnalysisReport.vue';
+
 const stockStore = useStockStore();
 const message = useMessage();
 const symbol = ref(localStorage.getItem('ai_last_symbol') || '');
@@ -54,19 +54,40 @@ const loading = ref(false);
 const errorMessage = ref('');
 const marketOptions = [{ label: 'A股', value: 'A' }, { label: '港股', value: 'HK' }, { label: '美股', value: 'US' }];
 const modelOptions = [
-  { label: 'DeepSeek Chat', value: 'deepseek-chat' }, { label: 'DeepSeek Reasoner', value: 'deepseek-reasoner' },
-  { label: 'GPT-4o', value: 'gpt-4o' }, { label: 'GPT-4o-mini', value: 'gpt-4o-mini' },
-  { label: 'GPT-4.1', value: 'gpt-4.1' }, { label: 'GPT-4.1-mini', value: 'gpt-4.1-mini' }, { label: 'GPT-4.1-nano', value: 'gpt-4.1-nano' },
-  { label: 'Claude 3.5 Sonnet', value: 'claude-3-5-sonnet-20241022' }, { label: 'Claude 3.5 Haiku', value: 'claude-3-5-haiku-20241022' },
-  { label: 'Gemini 2.0 Flash', value: 'gemini-2.0-flash' }, { label: 'Qwen Turbo', value: 'qwen-turbo' }, { label: 'Qwen Plus', value: 'qwen-plus' },
-  { label: 'Moonshot v1', value: 'moonshot-v1-8k' }, { label: '自定义', value: '__custom__' },
+  { label: 'DeepSeek Chat', value: 'deepseek-chat', apiBaseUrl: 'https://api.deepseek.com' },
+  { label: 'DeepSeek Reasoner', value: 'deepseek-reasoner', apiBaseUrl: 'https://api.deepseek.com' },
+  { label: 'GPT-4o', value: 'gpt-4o', apiBaseUrl: 'https://api.openai.com' },
+  { label: 'GPT-4o-mini', value: 'gpt-4o-mini', apiBaseUrl: 'https://api.openai.com' },
+  { label: 'GPT-4.1', value: 'gpt-4.1', apiBaseUrl: 'https://api.openai.com' },
+  { label: 'GPT-4.1-mini', value: 'gpt-4.1-mini', apiBaseUrl: 'https://api.openai.com' },
+  { label: 'GPT-4.1-nano', value: 'gpt-4.1-nano', apiBaseUrl: 'https://api.openai.com' },
+  { label: 'Claude 3.5 Sonnet', value: 'claude-3-5-sonnet-20241022', apiBaseUrl: 'https://api.anthropic.com' },
+  { label: 'Claude 3.5 Haiku', value: 'claude-3-5-haiku-20241022', apiBaseUrl: 'https://api.anthropic.com' },
+  { label: 'Gemini 2.0 Flash', value: 'gemini-2.0-flash', apiBaseUrl: 'https://generativelanguage.googleapis.com' },
+  { label: 'Qwen Turbo', value: 'qwen-turbo', apiBaseUrl: 'https://dashscope.aliyuncs.com/compatible-mode/v1' },
+  { label: 'Qwen Plus', value: 'qwen-plus', apiBaseUrl: 'https://dashscope.aliyuncs.com/compatible-mode/v1' },
+  { label: 'Moonshot v1', value: 'moonshot-v1-8k', apiBaseUrl: 'https://api.moonshot.cn' },
+  { label: '自定义', value: '__custom__', apiBaseUrl: '' },
 ];
 const modelHint = computed(() => {
   if (aiCustom.value && aiModel.value === '__custom__') return '当前：' + aiCustom.value;
   const found = modelOptions.find(o => o.value === aiModel.value);
   return found && found.value !== '__custom__' ? '当前：' + found.label : '';
 });
-function onModelChange(value: string): void { if (value !== '__custom__') { aiCustom.value = ''; localStorage.setItem('ai_model', value); } }
+function onModelChange(value: string): void {
+  if (value !== '__custom__') {
+    aiCustom.value = '';
+    localStorage.setItem('ai_model', value);
+    const found = modelOptions.find(o => o.value === value);
+    if (found && found.apiBaseUrl) {
+      aiBaseUrl.value = found.apiBaseUrl;
+      localStorage.setItem('ai_base_url', found.apiBaseUrl);
+    }
+  } else {
+    aiBaseUrl.value = '';
+    localStorage.removeItem('ai_base_url');
+  }
+}
 function clearConfig(): void { aiModel.value = 'deepseek-chat'; aiCustom.value = ''; aiBaseUrl.value = ''; aiApiKey.value = ''; localStorage.removeItem('ai_model'); localStorage.removeItem('ai_custom'); localStorage.removeItem('ai_base_url'); localStorage.removeItem('ai_api_key'); message.success('已清除 AI 配置'); }
 function downloadReport(): void {}
 function downloadHtml(): void {}
