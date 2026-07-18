@@ -6,6 +6,7 @@
     :collapsed="collapsed"
     :native-scrollbar="false"
     class="app-sidebar"
+    :class="{ 'sidebar-open': open }"
   >
     <div class="sidebar-logo">
       <n-icon size="28" color="#2080f0">
@@ -47,6 +48,9 @@ import { computed, h, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { NIcon, useMessage } from 'naive-ui';
 
+defineProps<{ open: boolean }>();
+const emit = defineEmits<{ (e: 'close'): void }>();
+
 const router = useRouter();
 const route = useRoute();
 const message = useMessage();
@@ -64,8 +68,6 @@ const menuOptions = [
   { label: '投资组合', key: 'portfolio', icon: renderIcon('<path d="M11 17h2v-1h1c.55 0 1-.45 1-1v-3c0-.55-.45-1-1-1h-3v-1h4V8h-2V7h-2v1h-1c-.55 0-1 .45-1 1v3c0 .55.45 1 1 1h3v1H9v2h2v1zm-4 4h14V3H5v14l-4 4V3c0-1.1.9-2 2-2h14c1.1 0 2 .9 2 2v14c0 1.1-.9 2-2 2H7l-4 4v-2l4-4z"/>') },
   { label: 'AI分析', key: 'analysis', icon: renderIcon('<path d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z"/>') },
   { label: '清除本地数据', key: 'clearData', icon: renderIcon('<path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>') },
-  { type: 'divider' },
-  { label: '登录 / 注册', key: 'login', icon: renderIcon('<path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>') },
 ];
 
 function handleMenuSelect(key: string): void {
@@ -75,9 +77,11 @@ function handleMenuSelect(key: string): void {
       localStorage.removeItem(item);
     }
     message.success('已清除所有本地缓存数据');
+    emit('close');
     return;
   }
   router.push({ name: key });
+  emit('close');
 }
 
 function toggleCollapse(): void {

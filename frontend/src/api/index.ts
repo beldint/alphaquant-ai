@@ -43,6 +43,7 @@ export interface StockScoreItem {
   strengths: string[];
   risks: string[];
   suggestion: string;
+  data_insufficient?: boolean;
   raw_breakdown?: Record<string, unknown>;
 }
 export async function getStockScore(symbol: string, market = 'A'): Promise<ApiResponse<StockScoreItem>> {

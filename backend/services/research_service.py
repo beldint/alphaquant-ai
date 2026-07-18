@@ -251,6 +251,7 @@ class ResearchService:
                 risks=list(score.risks),
                 suggestion=score.suggestion,
                 raw_breakdown=dict(score.raw_breakdown),
+                data_insufficient=bool(score.raw_breakdown.get("data_insufficient", False)),
             )
 
     def _indicator_frame(self, bars: list[KlineBar]) -> pd.DataFrame:
@@ -417,6 +418,7 @@ class ResearchService:
             "raw_breakdown": {
                 **score.raw_breakdown,
                 "name": score.name,
+                "data_insufficient": score.data_insufficient,
             },
         }
         await self._upsert(session, StockScore, values, ["symbol", "score_date"])
@@ -471,6 +473,7 @@ def _to_score_response(score: ResearchScoreResult) -> ResearchScoreResponse:
         risks=score.risks,
         suggestion=score.suggestion,
         raw_breakdown=score.raw_breakdown,
+        data_insufficient=score.data_insufficient,
     )
 
 

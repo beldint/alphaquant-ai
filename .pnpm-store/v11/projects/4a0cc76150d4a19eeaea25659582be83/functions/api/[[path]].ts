@@ -60,7 +60,7 @@ function apiResponse(data) {
 }
 
 function railFetch(url, method, headers, body) {
-  return fetch("https://web-production-74b0a.up.railway.app" + url.pathname + url.search, {
+  return fetch("https://alphaquant-ai-production.up.railway.app" + url.pathname + url.search, {
     method,
     headers,
     body,
@@ -152,8 +152,6 @@ async function searchEastMoney(keyword) {
 }
 
 async function handleSearch(keyword) {
-  const localResults = searchLocalStocks(keyword);
-  if (localResults.length > 0) return localResults;
   try {
     const remoteResults = await searchEastMoney(keyword);
     if (remoteResults.length > 0) return remoteResults;
@@ -186,6 +184,140 @@ function stockDisplayName(symbol) {
 function roundNumber(value, digits = 2) {
   if (!Number.isFinite(value)) return null;
   return Number(value.toFixed(digits));
+}
+
+function emptyAnalysisPayload(payload) {
+  const symbol = String(payload.symbol || "").trim();
+  const market = String(payload.market || "A");
+  return {
+    symbol,
+    market,
+    provider: "--",
+    model: "--",
+    report_markdown: "--",
+    objective_data: {},
+    technical_summary: {},
+    risk_summary: { data_quality: "unavailable", real_data_available: false },
+    data_timestamp: new Date().toISOString(),
+  };
+}
+
+function emptyScorePayload(symbol) {
+  return {
+    symbol,
+    name: "--",
+    score_date: null,
+    fundamental_score: null,
+    solvency_score: null,
+    technical_score: null,
+    valuation_score: null,
+    risk_score: null,
+    total_score: null,
+    rating: "--",
+    strengths: [],
+    risks: [],
+    suggestion: "--",
+    raw_breakdown: { real_data_available: false },
+  };
+}
+
+function rawNumber(value) {
+  if (value == null || value === "" || value === "-") return null;
+  if (typeof value === "object" && value.raw != null) return rawNumber(value.raw);
+  const parsed = Number(String(value).replace(/,/g, "").replace("%", ""));
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function hasFinancialValue(financials) {
+  return [
+    "revenue",
+    "net_profit",
+    "roe",
+    "gross_margin",
+    "debt_ratio",
+    "pe_ttm",
+    "pb",
+    "market_cap",
+  ].some((field) => financials[field] !== null && financials[field] !== undefined && financials[field] !== "");
+}
+
+function financialPayload(symbol, source, values) {
+  return {
+    symbol,
+    name: values.name || stockDisplayName(symbol),
+    source,
+    net_profit: rawNumber(values.net_profit),
+    deducted_net_profit: rawNumber(values.deducted_net_profit),
+    gross_margin: rawNumber(values.gross_margin),
+    net_margin: rawNumber(values.net_margin),
+    roe: rawNumber(values.roe),
+    revenue: rawNumber(values.revenue),
+    revenue_growth: rawNumber(values.revenue_growth),
+    debt_ratio: rawNumber(values.debt_ratio),
+    current_ratio: rawNumber(values.current_ratio),
+    quick_ratio: rawNumber(values.quick_ratio),
+    cash: rawNumber(values.cash),
+    interest_debt: rawNumber(values.interest_debt),
+    operating_cashflow: rawNumber(values.operating_cashflow),
+    pe_ttm: rawNumber(values.pe_ttm),
+    pb: rawNumber(values.pb),
+    peg: rawNumber(values.peg),
+    dividend_yield: rawNumber(values.dividend_yield),
+    inventory_days: rawNumber(values.inventory_days),
+    ar_days: rawNumber(values.ar_days),
+    goodwill: rawNumber(values.goodwill),
+    pledge_ratio: rawNumber(values.pledge_ratio),
+    major_reduction: values.major_reduction || null,
+    auditor_change: values.auditor_change || null,
+    market_cap: rawNumber(values.market_cap),
+    total_shares: rawNumber(values.total_shares),
+    report_date: values.report_date || null,
+  };
+}
+
+async function fetchEastMoneyFinancials(symbol) {
+  const quoteUrl = "https://push2.eastmoney.com/api/qt/stock/get?secid=" + secid(symbol) + "&fields=f58,f116,f117,f162,f167";
+  const financialParams = new URLSearchParams({
+    reportName: "RPT_F10_FINANCE_MAINFINADATA",
+    columns: "ALL",
+    filter: '(SECURITY_CODE="' + symbol + '")',
+    pageNumber: "1",
+    pageSize: "1",
+    sortTypes: "-1",
+    sortColumns: "REPORT_DATE",
+  });
+  const financialUrl = "https://datacenter.eastmoney.com/securities/api/data/v1/get?" + financialParams.toString();
+  const headers = { "User-Agent": "Mozilla/5.0", Referer: "https://quote.eastmoney.com/" };
+  const [quoteResponse, financialResponse] = await Promise.all([
+    fetch(quoteUrl, { headers }),
+    fetch(financialUrl, { headers }),
+  ]);
+  const quotePayload = quoteResponse.ok ? await quoteResponse.json() : {};
+  const financialPayloadJson = financialResponse.ok ? await financialResponse.json() : {};
+  const quote = quotePayload.data || {};
+  const row = (((financialPayloadJson.result || {}).data || [])[0]) || {};
+  const peRaw = rawNumber(quote.f162);
+  const pbRaw = rawNumber(quote.f167);
+  const payload = financialPayload(symbol, "eastmoney", {
+    name: quote.f58,
+    report_date: row.REPORT_DATE,
+    net_profit: row.PARENTNETPROFIT,
+    deducted_net_profit: row.KCFJCXSYJLR,
+    gross_margin: row.XSMLL,
+    net_margin: row.XSJLL,
+    roe: row.ROEJQ,
+    revenue: row.TOTALOPERATEREVE,
+    revenue_growth: row.TOTALOPERATEREVETZ,
+    debt_ratio: row.ZCFZL,
+    current_ratio: row.LD,
+    quick_ratio: row.SD,
+    operating_cashflow: row.NETCASH_OPERATE_PK,
+    pe_ttm: peRaw == null ? null : peRaw / 100,
+    pb: pbRaw == null ? null : pbRaw / 100,
+    market_cap: quote.f116,
+    total_shares: row.TOTAL_SHARE || quote.f117,
+  });
+  return hasFinancialValue(payload) ? payload : null;
 }
 
 async function fetchQuoteFallback(symbol) {
@@ -381,7 +513,7 @@ export async function onRequest(context) {
       console.error("railway analysis unavailable", error);
     }
     const payload = parseAnalysisPayload(requestText, url);
-    return apiResponse({ code: 0, message: "success", data: await buildFallbackAnalysis(payload) });
+    return apiResponse({ code: 0, message: "success", data: emptyAnalysisPayload(payload) });
   }
 
   if (SEARCH_PATH.test(path)) {
@@ -527,6 +659,26 @@ export async function onRequest(context) {
     const symbol = path.split("/")[4];
     const tsToken = context.env.TUSHARE_TOKEN || "";
 
+    try {
+      const response = await rail();
+      if (response.ok) {
+        const payload = await response.clone().json().catch(() => null);
+        const data = payload && payload.data ? payload.data : null;
+        if (data && hasFinancialValue(data)) return response;
+      }
+    } catch (error) {
+      console.error("railway financials unavailable", error);
+    }
+
+    try {
+      const eastMoneyData = await fetchEastMoneyFinancials(symbol);
+      if (eastMoneyData) {
+        return apiResponse({ code: 0, message: "success", data: eastMoneyData });
+      }
+    } catch (error) {
+      console.error("eastmoney financials failed", error);
+    }
+
     if (tsToken) {
       try {
         const finResp = await fetch("https://api.tushare.pro", {
@@ -542,36 +694,18 @@ export async function onRequest(context) {
         const finData = await finResp.json();
         const finRow = ((finData.data || {}).items || [])[0] || [];
         if (finRow.length > 1 && typeof finRow[1] === "number") {
+          const data = financialPayload(symbol, "tushare", {
+            roe: finRow[0],
+            gross_margin: finRow[1],
+            net_margin: finRow[2],
+            revenue: finRow[3],
+            net_profit: finRow[4],
+            debt_ratio: finRow[5],
+          });
           return apiResponse({
             code: 0,
             message: "success",
-            data: {
-              market_cap: null,
-              pe_ttm: null,
-              pb: null,
-              peg: null,
-              dividend_yield: null,
-              roe: finRow[1] != null ? Number((finRow[1] * 100).toFixed(2)) + "%" : null,
-              gross_margin: finRow[2] != null ? Number((finRow[2] * 100).toFixed(2)) + "%" : null,
-              net_margin: finRow[3] != null ? Number((finRow[3] * 100).toFixed(2)) + "%" : null,
-              revenue: finRow[4] != null ? Number(Number(finRow[4]).toFixed(2)) : null,
-              net_profit: finRow[5] != null ? Number(Number(finRow[5]).toFixed(2)) : null,
-              debt_ratio: finRow[6] != null ? Number((finRow[6] * 100).toFixed(2)) + "%" : null,
-              revenue_growth: null,
-              deducted_net_profit: null,
-              current_ratio: null,
-              quick_ratio: null,
-              operating_cashflow: null,
-              cash_equiv: null,
-              total_debt: null,
-              inventory_turnover: null,
-              ar_turnover: null,
-              goodwill: null,
-              pledge_ratio: null,
-              major_reduction: null,
-              auditor_change: null,
-              report_date: null,
-            },
+            data,
           });
         }
       } catch (error) {
@@ -589,37 +723,31 @@ export async function onRequest(context) {
       const keyStats = quoteSummary.defaultKeyStatistics || {};
       const financialData = quoteSummary.financialData || {};
       const calendar = quoteSummary.calendarEvents || {};
-      const raw = (value) => value && value.raw ? value.raw : null;
+      const data = financialPayload(symbol, "yahoo", {
+        pe_ttm: keyStats.trailingPE,
+        pb: keyStats.priceToBook,
+        market_cap: quoteSummary.price?.marketCap,
+        peg: keyStats.pegRatio,
+        dividend_yield: rawNumber(keyStats.dividendYield) == null ? null : rawNumber(keyStats.dividendYield) * 100,
+        roe: rawNumber(keyStats.returnOnEquity) == null ? null : rawNumber(keyStats.returnOnEquity) * 100,
+        gross_margin: rawNumber(financialData.grossMargins) == null ? null : rawNumber(financialData.grossMargins) * 100,
+        net_margin: rawNumber(financialData.profitMargins) == null ? null : rawNumber(financialData.profitMargins) * 100,
+        revenue: financialData.totalRevenue,
+        revenue_growth: rawNumber(financialData.revenueGrowth) == null ? null : rawNumber(financialData.revenueGrowth) * 100,
+        net_profit: financialData.netIncome,
+        current_ratio: financialData.currentRatio,
+        quick_ratio: financialData.quickRatio,
+        debt_ratio: keyStats.debtToEquity,
+        operating_cashflow: financialData.operatingCashflow,
+        report_date: (calendar.earnings || {}).earningsDate ? (calendar.earnings.earningsDate[0] || {}).fmt || null : null,
+      });
+      if (!hasFinancialValue(data)) {
+        throw new Error("Yahoo financial response does not contain usable indicators");
+      }
       return apiResponse({
         code: 0,
         message: "success",
-        data: {
-          pe_ttm: raw(keyStats.trailingPE),
-          pb: raw(keyStats.priceToBook),
-          market_cap: raw(quoteSummary.price?.marketCap),
-          peg: raw(keyStats.pegRatio),
-          dividend_yield: raw(keyStats.dividendYield) ? (raw(keyStats.dividendYield) * 100).toFixed(2) : null,
-          roe: raw(keyStats.returnOnEquity) ? (raw(keyStats.returnOnEquity) * 100).toFixed(2) : null,
-          gross_margin: raw(financialData.grossMargins) ? (raw(financialData.grossMargins) * 100).toFixed(2) : null,
-          net_margin: raw(financialData.profitMargins) ? (raw(financialData.profitMargins) * 100).toFixed(2) : null,
-          revenue: raw(financialData.totalRevenue),
-          revenue_growth: raw(financialData.revenueGrowth) ? (raw(financialData.revenueGrowth) * 100).toFixed(2) : null,
-          net_profit: raw(financialData.netIncome) || null,
-          deducted_net_profit: null,
-          current_ratio: raw(financialData.currentRatio),
-          quick_ratio: raw(financialData.quickRatio),
-          debt_ratio: raw(keyStats.debtToEquity) ? raw(keyStats.debtToEquity).toFixed(2) : null,
-          operating_cashflow: raw(financialData.operatingCashflow),
-          cash_equiv: null,
-          total_debt: null,
-          inventory_turnover: null,
-          ar_turnover: null,
-          goodwill: null,
-          pledge_ratio: null,
-          major_reduction: null,
-          auditor_change: null,
-          report_date: (calendar.earnings || {}).earningsDate ? (calendar.earnings.earningsDate[0] || {}).fmt || null : null,
-        },
+        data,
       });
     } catch (error) {
       console.error("yahoo financials failed", error);
@@ -664,99 +792,14 @@ export async function onRequest(context) {
   const scoreMatch = path.startsWith("/api/v1/stocks/") && path.endsWith("/score") ? [null, path.split("/")[4]] : null;
   if (scoreMatch) {
     const symbol = scoreMatch[1] || "";
-    const ySymbol = symbol.match(/^[569]/) ? symbol + ".SS" : symbol + ".SZ";
     try {
-      const response = await fetch("https://query1.finance.yahoo.com/v8/finance/chart/" + ySymbol + "?range=6mo&interval=1d", {
-        headers: { "User-Agent": "Mozilla/5.0" },
-      });
-      if (response.ok) {
-        const payload = await response.json();
-        const chart = ((payload.chart || {}).result || [{}])[0] || {};
-        const quote = ((chart.indicators || {}).quote || [{}])[0] || {};
-        const closes = (quote.close || []).filter((value) => value !== null);
-        if (closes.length > 5) {
-          let technical = 8;
-          const fundamental = 12;
-          const solvency = 8;
-          const valuation = 5;
-          const risk = 12;
-          const last = closes[closes.length - 1];
-          const prev5 = closes[closes.length - 5];
-          const prev20 = closes[Math.max(0, closes.length - 20)];
-          if (last && prev5) {
-            const pct = ((last - prev5) / prev5) * 100;
-            if (pct > 3) technical += 5;
-            else if (pct > 0) technical += 3;
-            else if (pct > -3) technical += 2;
-          }
-          if (last && prev20) {
-            const pct = ((last - prev20) / prev20) * 100;
-            if (pct > 5) technical += 4;
-            else if (pct > 2) technical += 3;
-          }
-          if (closes.length > 10) {
-            const avg5 = closes.slice(-5).reduce((sum, value) => sum + value, 0) / 5;
-            const avg10 = closes.slice(-10).reduce((sum, value) => sum + value, 0) / 10;
-            if (avg5 > avg10) technical += 3;
-          }
-          technical = Math.min(technical, 20);
-          const total = Math.min(fundamental + solvency + technical + valuation + risk, 100);
-          const strengths = [];
-          const risks = [];
-          if (technical >= 15) strengths.push("\u6280\u672f\u8d8b\u52bf\u8f83\u5f3a");
-          else if (technical <= 8) risks.push("\u6280\u672f\u8d8b\u52bf\u504f\u5f31");
-          risks.push("\u8d22\u52a1\u548c\u98ce\u9669\u7ef4\u5ea6\u4f7f\u7528\u7ebf\u4e0a\u515c\u5e95\u5206");
-          return apiResponse({
-            code: 0,
-            message: "success",
-            data: {
-              symbol,
-              name: symbol,
-              score_date: new Date().toISOString().slice(0, 10),
-              fundamental_score: fundamental,
-              solvency_score: solvency,
-              technical_score: technical,
-              valuation_score: valuation,
-              risk_score: risk,
-              total_score: total,
-              rating: total >= 85 ? "A" : total >= 70 ? "B" : total >= 55 ? "C" : "D",
-              strengths,
-              risks,
-              suggestion: total >= 70 ? "\u5177\u5907\u4e00\u5b9a\u7814\u7a76\u4ef7\u503c\uff0c\u9700\u7ed3\u5408\u8d22\u52a1\u6570\u636e\u8fdb\u4e00\u6b65\u786e\u8ba4\u3002" : "\u6570\u636e\u4e0d\u8db3\uff0c\u5efa\u8bae\u5148\u89c2\u671b\u3002",
-              raw_breakdown: {
-                weights: { fundamental: 30, solvency: 20, technical: 20, valuation: 15, risk: 15 },
-                fallback: true,
-              },
-            },
-          });
-        }
-      }
+      const response = await rail();
+      if (response.ok) return response;
     } catch (error) {
-      console.error("score calculation failed", error);
+      console.error("railway score unavailable", error);
     }
 
-    return apiResponse({
-      code: 0,
-      message: "success",
-      data: {
-        symbol,
-        name: symbol,
-        fundamental_score: 12,
-        solvency_score: 8,
-        technical_score: 8,
-        valuation_score: 5,
-        risk_score: 12,
-        total_score: 45,
-        rating: "D",
-        strengths: [],
-        risks: ["\u7814\u7a76\u8bc4\u5206\u6570\u636e\u6e90\u6682\u4e0d\u53ef\u7528"],
-        suggestion: "\u6570\u636e\u4e0d\u8db3\uff0c\u5efa\u8bae\u5148\u89c2\u671b\u5e76\u7b49\u5f85\u8d22\u52a1\u548c\u98ce\u9669\u6570\u636e\u5237\u65b0\u3002",
-        raw_breakdown: {
-          weights: { fundamental: 30, solvency: 20, technical: 20, valuation: 15, risk: 15 },
-          fallback: true,
-        },
-      },
-    });
+    return apiResponse({ code: 0, message: "success", data: emptyScorePayload(symbol) });
   }
 
   return rail();

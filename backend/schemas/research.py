@@ -41,6 +41,7 @@ class ResearchScoreResponse(ORMModel):
     strengths: list[str]
     risks: list[str]
     suggestion: str
+    data_insufficient: bool = False
     raw_breakdown: dict[str, Any]
 
 

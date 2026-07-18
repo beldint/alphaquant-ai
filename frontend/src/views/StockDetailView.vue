@@ -4,7 +4,7 @@
       <div>
         <h2>{{ displayName }} <span class="text-muted" style="font-weight:400;font-size:14px">{{ displayMarket }}</span></h2>
       </div>
-<n-card size="small" class="mb-24" v-if="stockScore">
+<n-card size="small" class="mb-24" v-if="stockScore && !stockScore.data_insufficient">
       <template #header><n-space align="center"><n-h4 prefix="bar" style="margin:0">股票评分</n-h4><n-tag size="small" :type="ratingType(stockScore.rating)">评级 {{ stockScore.rating || '--' }}</n-tag></n-space></template>
       <n-grid :cols="2" :x-gap="12" :y-gap="12" responsive="screen">
         <n-grid-item>
@@ -17,6 +17,14 @@
         <n-grid-item><n-statistic label="估值(15分)" :value="fmtScore(stockScore.valuation_score)" :tabular-nums="true" /><n-progress v-if="stockScore.valuation_score != null" type="line" :percentage="roundTo2(stockScore.valuation_score / 15 * 100)" :height="6" :border-radius="4" color="#8a2be2" /></n-grid-item>
         <n-grid-item><n-statistic label="风险(15分)" :value="fmtScore(stockScore.risk_score)" :tabular-nums="true" /><n-progress v-if="stockScore.risk_score != null" type="line" :percentage="roundTo2(stockScore.risk_score / 15 * 100)" :height="6" :border-radius="4" color="#d03050" /></n-grid-item>
       </n-grid>
+    </n-card>
+    <n-card size="small" class="mb-24" v-if="stockScore && stockScore.data_insufficient">
+      <template #header><n-h4 prefix="bar" style="margin:0">股票评分</n-h4></template>
+      <n-empty description="分析数据不足，无法进行评分" style="padding: 24px 0">
+        <template #extra>
+          <p style="color: #888; font-size: 14px; margin: 0">当前股票的财务数据未能获取到，暂无足够数据进行综合评分。</p>
+        </template>
+      </n-empty>
     </n-card>
 
     <n-card size="small" class="mb-24">
@@ -49,6 +57,7 @@
         </n-collapse-item>
       </n-collapse>
     </n-card>
+    </div>
   </div>
 </template>
 <script setup lang="ts">

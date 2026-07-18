@@ -34,6 +34,7 @@ class ResearchScoreResult:
     risks: list[str] = field(default_factory=list)
     suggestion: str = ""
     raw_breakdown: dict[str, Any] = field(default_factory=dict)
+    data_insufficient: bool = False
 
 
 class ResearchScoringService:
@@ -61,6 +62,34 @@ class ResearchScoringService:
         Returns:
             Weighted research score result.
         """
+        if financials is None:
+            fundamental_score = 0.0
+            solvency_score = 0.0
+            technical_score = self._score_technical(indicator_frame)
+            valuation_score = 0.0
+            risk_score = 0.0
+            total_score = round(technical_score, 2)
+            rating = self._rating(total_score)
+            strengths = ["技术指标可计算"] if technical_score > 0 else []
+            risks = ["财务数据未获取，无法评分"]
+            suggestion = "分析数据不足，无法进行评分"
+            return ResearchScoreResult(
+                symbol=symbol,
+                name=name,
+                fundamental_score=0.0,
+                solvency_score=0.0,
+                technical_score=technical_score,
+                valuation_score=0.0,
+                risk_score=0.0,
+                total_score=total_score,
+                rating=rating,
+                strengths=strengths,
+                risks=risks,
+                suggestion=suggestion,
+                raw_breakdown={},
+                data_insufficient=True,
+            )
+
         fundamental_score = self._score_fundamentals(financials)
         solvency_score = self._score_solvency(financials)
         technical_score = self._score_technical(indicator_frame)

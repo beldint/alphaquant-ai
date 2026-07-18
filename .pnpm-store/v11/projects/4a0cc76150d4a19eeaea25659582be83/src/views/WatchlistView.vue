@@ -5,8 +5,8 @@
       <p>管理您的自选股票列表</p>
     </div>
 
-    <n-data-table v-if="items.length > 0" :row-key="rowKey" :columns="columns" :data="items" :bordered="false" size="small" />
-    <n-empty v-else description="暂无自选股，在行情中心或股票搜索中添加" style="margin-top: 60px" />
+    <div class="overflow-table"><n-data-table v-if="items.length > 0" :row-key="rowKey" :columns="columns" :data="items" :bordered="false" size="small" /></div>
+    <n-empty v-if="items.length === 0" description="暂无自选股，在行情中心或股票搜索中添加" style="margin-top: 60px" />
   </div>
 </template>
 
