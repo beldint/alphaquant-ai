@@ -148,7 +148,7 @@ export async function onRequest(context) {
         const finResp = await fetch("https://api.tushare.pro", {
           method: "POST",
           headers: {"Content-Type": "application/json"},
-          body: JSON.stringify({"apikey": tsToken, "api_name": "finacial_indicator", "params": {"ts_code": sym.startsWith("6") ? sym+".SH" : sym+".SZ", "limit": 1}, "fields": "roe,gross_margin,net_margin,revenue,net_profit,debt_to_assets"})
+          body: JSON.stringify({"apikey": tsToken, "api_name": "fina_indicator", "params": {"ts_code": sym.startsWith("6") ? sym+".SH" : sym+".SZ", "limit": 1}, "fields": "roe,gross_margin,net_margin,revenue,net_profit,debt_to_assets"})
         });
         const finData = await finResp.json();
         var fin = (finData.data||{}).items||[];
