@@ -1,24 +1,10 @@
 <template>
   <div class="stock-detail-page">
-    <div class="page-header flex-between">
+    <div class="page-header">
       <div>
-        <h2>{{ symbol }} <span class="text-muted" style="font-weight:400;font-size:16px">{{ displayName }}</span></h2>
+        <h2>{{ displayName }} <span class="text-muted" style="font-weight:400;font-size:14px">{{ displayMarket }}</span></h2>
       </div>
-      <n-space wrap :size="[4,4]">
-        <n-button size="small" :type="isWatched ? 'warning' : 'primary'" ghost @click="toggleWatchlist">{{ isWatched ? '已自选' : '加自选' }}</n-button>
-        <n-button size="small" type="success" ghost @click="goToAnalysis">AI分析</n-button>
-        <n-button size="small" type="info" ghost @click="goToFinancials">财务数据</n-button>
-      </n-space>
-    </div>
-
-    <n-grid :cols="2" :x-gap="12" :y-gap="12" class="mb-24" responsive="screen">
-      <n-grid-item><n-statistic label="最新价" :value="fmtNum(quote?.price)" :tabular-nums="true" /></n-grid-item>
-      <n-grid-item><n-statistic label="涨跌额" :value="fmtNum(quote?.change)" :tabular-nums="true" :style="trendStyle(quote?.change)" /></n-grid-item>
-      <n-grid-item><n-statistic label="涨跌幅" :value="fmtPct(quote?.pct_change)" :tabular-nums="true" :style="trendStyle(quote?.pct_change)" /></n-grid-item>
-      <n-grid-item><n-statistic label="成交量" :value="fmtMoney(quote?.volume)" :tabular-nums="true" /></n-grid-item>
-    </n-grid>
-
-    <n-card size="small" class="mb-24" v-if="stockScore">
+<n-card size="small" class="mb-24" v-if="stockScore">
       <template #header><n-space align="center"><n-h4 prefix="bar" style="margin:0">股票评分</n-h4><n-tag size="small" :type="ratingType(stockScore.rating)">评级 {{ stockScore.rating || '--' }}</n-tag></n-space></template>
       <n-grid :cols="2" :x-gap="12" :y-gap="12" responsive="screen">
         <n-grid-item>
@@ -67,20 +53,27 @@
 </template>
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
-import { NAlert, NButton, NCard, NCollapse, NCollapseItem, NGrid, NGridItem, NH4, NProgress, NSpace, NStatistic, NTabPane, NTabs, NTag } from 'naive-ui';
+import { useRoute } from 'vue-router';
+import { NCard, NCollapse, NCollapseItem, NGrid, NGridItem, NH4, NProgress, NSpace, NStatistic, NTabPane, NTabs, NTag } from 'naive-ui';
 import KLineChart from '../components/KLineChart.vue';
 import TechnicalIndicators from '../components/TechnicalIndicators.vue';
 import { getFinancials } from '../api';
 import { useStockStore } from '../stores/stock';
-import { useWatchlistStore } from '../stores/watchlist';
+
 const route = useRoute();
-const router = useRouter();
+
 const stockStore = useStockStore();
-const watchlistStore = useWatchlistStore();
+
 const symbol = computed(() => route.params.symbol as string);
 const quote = computed(() => stockStore.currentQuote);
 const displayName = computed(() => quote.value?.name || finData.value?.name || '--');
+const displayMarket = computed(() => {
+  var m = quote.value?.market || 'A';
+  if (m === 'A') return 'A股';
+  if (m === 'HK') return '港股';
+  if (m === 'US') return '美股';
+  return m;
+});
 const klineData = computed(() => stockStore.klineData);
 const stockScore = computed(() => stockStore.stockScore);
 const klinePeriod = ref('1M');
@@ -92,13 +85,8 @@ function fmtNum(value: unknown): string { const numeric = toNumber(value); retur
 function fmtScore(value: number | null): string { return value === null || value === undefined ? '--' : value.toFixed(1); }
 function roundTo2(value: number): number { if (!Number.isFinite(value)) return 0; return Math.round(value * 100) / 100; }
 async function fetchFinancials(): Promise<void> { try { const response = await getFinancials(symbol.value); finData.value = Number(response.code) === 0 && response.data ? response.data : null; } catch { finData.value = null; } }
-const isWatched = computed(() => watchlistStore.isInWatchlist(symbol.value));
-function toggleWatchlist(): void { const name = quote.value?.name || finData.value?.name || symbol.value; const market = quote.value?.market || 'A'; const added = watchlistStore.toggle(symbol.value, name, market); if (added) router.push({ name: 'watchlist' }); }
-function goToFinancials(): void { router.push({ name: 'financials', params: { symbol: symbol.value } }); }
-function goToAnalysis(): void { router.push({ name: 'analysis', query: { symbol: symbol.value, market: 'A' } }); }
 function scoreColor(score: number): string { if (score >= 80) return '#18a058'; if (score >= 65) return '#2080f0'; if (score >= 50) return '#f0a020'; return '#d03050'; }
 function ratingType(rating: string): 'default' | 'success' | 'info' | 'warning' | 'error' { if (rating === 'A') return 'success'; if (rating === 'B') return 'info'; if (rating === 'C') return 'warning'; if (rating === 'D') return 'error'; return 'default'; }
-function trendStyle(value: unknown): string { const numeric = toNumber(value); if (numeric === null) return ''; return numeric >= 0 ? 'color:var(--up-color)' : 'color:var(--down-color)'; }
 function switchPeriod(period: string): void { klinePeriod.value = period; const days = period === '1M' ? 30 : period === '3M' ? 90 : 180; const end = new Date().toISOString().slice(0, 10); const start = new Date(Date.now() - days * 86400000).toISOString().slice(0, 10); void stockStore.fetchKline(symbol.value, 'A', start, end); }
 function refreshPageData(): void { stockStore.clear(); void fetchFinancials(); void stockStore.fetchScore(symbol.value); void stockStore.fetchQuote(symbol.value); switchPeriod('1M'); }
 onMounted(refreshPageData);
