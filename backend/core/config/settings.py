@@ -434,7 +434,10 @@ class Settings(
     @property
     def sqlalchemy_database_url(self) -> str:
         """Return the database URL as a plain string for SQLAlchemy."""
-        return str(self.database_url)
+        url = str(self.database_url)
+        if url.startswith("postgresql://"):
+            url = url.replace("postgresql://", "postgresql+asyncpg://", 1)
+        return url
 
     @property
     def redis_cache_url(self) -> str:
