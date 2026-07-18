@@ -393,61 +393,58 @@ export async function onRequest(context) {
         const quote = ((chart.indicators || {}).quote || [{}])[0] || {};
         const closes = (quote.close || []).filter((value) => value !== null);
         if (closes.length > 5) {
-          let tech = 15;
-          let volume = 10;
+          let technical = 8;
           const fundamental = 12;
-          const valuation = 3;
-          let sentiment = 10;
+          const solvency = 8;
+          const valuation = 5;
+          const risk = 12;
           const last = closes[closes.length - 1];
           const prev5 = closes[closes.length - 5];
           const prev20 = closes[Math.max(0, closes.length - 20)];
           if (last && prev5) {
             const pct = ((last - prev5) / prev5) * 100;
-            if (pct > 3) tech += 8;
-            else if (pct > 0) tech += 5;
-            else if (pct > -3) tech += 3;
+            if (pct > 3) technical += 5;
+            else if (pct > 0) technical += 3;
+            else if (pct > -3) technical += 2;
           }
           if (last && prev20) {
             const pct = ((last - prev20) / prev20) * 100;
-            if (pct > 5) {
-              sentiment += 5;
-              tech += 7;
-            } else if (pct > 2) {
-              sentiment += 3;
-              tech += 5;
-            }
+            if (pct > 5) technical += 4;
+            else if (pct > 2) technical += 3;
           }
           if (closes.length > 10) {
             const avg5 = closes.slice(-5).reduce((sum, value) => sum + value, 0) / 5;
             const avg10 = closes.slice(-10).reduce((sum, value) => sum + value, 0) / 10;
-            if (avg5 > avg10) {
-              tech += 5;
-              volume += 5;
-            }
+            if (avg5 > avg10) technical += 3;
           }
-          const total = Math.min(tech + volume + fundamental + valuation + sentiment, 100);
+          technical = Math.min(technical, 20);
+          const total = Math.min(fundamental + solvency + technical + valuation + risk, 100);
           const strengths = [];
           const risks = [];
-          if (tech >= 22) strengths.push("\u6280\u672f\u8d8b\u52bf\u5065\u5eb7");
-          else if (tech <= 12) risks.push("\u6280\u672f\u9762\u504f\u5f31");
-          if (sentiment >= 15) strengths.push("\u77ed\u671f\u8d70\u52bf\u5f3a\u52b2");
-          else if (sentiment <= 8) risks.push("\u77ed\u671f\u8d70\u52bf\u504f\u5f31");
+          if (technical >= 15) strengths.push("\u6280\u672f\u8d8b\u52bf\u8f83\u5f3a");
+          else if (technical <= 8) risks.push("\u6280\u672f\u8d8b\u52bf\u504f\u5f31");
+          risks.push("\u8d22\u52a1\u548c\u98ce\u9669\u7ef4\u5ea6\u4f7f\u7528\u7ebf\u4e0a\u515c\u5e95\u5206");
           return apiResponse({
             code: 0,
             message: "success",
             data: {
               symbol,
               name: symbol,
+              score_date: new Date().toISOString().slice(0, 10),
+              fundamental_score: fundamental,
+              solvency_score: solvency,
+              technical_score: technical,
+              valuation_score: valuation,
+              risk_score: risk,
               total_score: total,
-              tech_score: Math.min(tech, 30),
-              volume_score: Math.min(volume, 20),
-              fundamental_score: Math.min(fundamental, 25),
-              valuation_score: Math.min(valuation, 5),
-              sentiment_score: Math.min(sentiment, 20),
-              summary: "\u7efc\u5408\u8bc4\u5206 " + total + "/100",
+              rating: total >= 85 ? "A" : total >= 70 ? "B" : total >= 55 ? "C" : "D",
               strengths,
               risks,
-              suggestion: total >= 80 ? "\u957f\u671f\u914d\u7f6e\u4ef7\u503c\u8f83\u9ad8" : total >= 65 ? "\u6280\u672f\u9762\u8f6c\u597d\uff0c\u53ef\u5206\u6279\u5efa\u4ed3" : total >= 50 ? "\u5efa\u8bae\u89c2\u671b" : "\u5efa\u8bae\u56de\u907f",
+              suggestion: total >= 70 ? "\u5177\u5907\u4e00\u5b9a\u7814\u7a76\u4ef7\u503c\uff0c\u9700\u7ed3\u5408\u8d22\u52a1\u6570\u636e\u8fdb\u4e00\u6b65\u786e\u8ba4\u3002" : "\u6570\u636e\u4e0d\u8db3\uff0c\u5efa\u8bae\u5148\u89c2\u671b\u3002",
+              raw_breakdown: {
+                weights: { fundamental: 30, solvency: 20, technical: 20, valuation: 15, risk: 15 },
+                fallback: true,
+              },
             },
           });
         }
@@ -462,16 +459,20 @@ export async function onRequest(context) {
       data: {
         symbol,
         name: symbol,
-        total_score: 50,
-        tech_score: 15,
-        volume_score: 10,
         fundamental_score: 12,
-        valuation_score: 3,
-        sentiment_score: 10,
-        summary: "\u7efc\u5408\u8bc4\u5206 50/100",
+        solvency_score: 8,
+        technical_score: 8,
+        valuation_score: 5,
+        risk_score: 12,
+        total_score: 45,
+        rating: "D",
         strengths: [],
-        risks: ["\u6570\u636e\u6e90\u4e0d\u53ef\u7528"],
-        suggestion: "\u5efa\u8bae\u89c2\u671b",
+        risks: ["\u7814\u7a76\u8bc4\u5206\u6570\u636e\u6e90\u6682\u4e0d\u53ef\u7528"],
+        suggestion: "\u6570\u636e\u4e0d\u8db3\uff0c\u5efa\u8bae\u5148\u89c2\u671b\u5e76\u7b49\u5f85\u8d22\u52a1\u548c\u98ce\u9669\u6570\u636e\u5237\u65b0\u3002",
+        raw_breakdown: {
+          weights: { fundamental: 30, solvency: 20, technical: 20, valuation: 15, risk: 15 },
+          fallback: true,
+        },
       },
     });
   }

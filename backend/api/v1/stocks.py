@@ -7,18 +7,16 @@ Python Version: 3.11.9
 
 from __future__ import annotations
 
-from datetime import date, timedelta
+from datetime import date
 from typing import Literal
 
-import pandas as pd
 from fastapi import APIRouter, Query
 
 from backend.core.responses import APIResponse, build_success_response
-from backend.indicators.calculator import IndicatorCalculator
-from backend.schemas.analysis import StockScoreResponse
 from backend.schemas.financial import FinancialIndicators
+from backend.schemas.research import ResearchScoreResponse
 from backend.schemas.stock import QuoteResponse, StockResponse
-from backend.services.scoring_service import StockScorer, StockScoreResult
+from backend.services.research_service import research_service
 from backend.services.stock_service import stock_service
 
 router = APIRouter(prefix="/stocks", tags=["stocks"])
@@ -131,11 +129,11 @@ async def get_kline(
     return build_success_response([bar.model_dump(mode="json") for bar in bars])
 
 
-@router.get("/{symbol}/score", response_model=APIResponse[StockScoreResponse])
+@router.get("/{symbol}/score", response_model=APIResponse[ResearchScoreResponse])
 async def get_stock_score(
     symbol: str,
     market: str = Query(default="A", pattern="^(A|HK|US)$"),
-) -> APIResponse[StockScoreResponse]:
+) -> APIResponse[ResearchScoreResponse]:
     """
     Get 100-point stock score.
 
@@ -146,50 +144,11 @@ async def get_stock_score(
     Returns:
         Stock score response.
     """
-    quote = await stock_service.get_realtime_quote(symbol, market)  # type: ignore[arg-type]
-    end = date.today()
-    start = end - timedelta(days=120)
-    bars = await stock_service.get_daily_kline(
+    refresh = await research_service.refresh_stock(
         symbol,
         market=market,
-        start_date=start,
-        end_date=end,
-    )  # type: ignore[arg-type]
-    frame = pd.DataFrame(
-        [
-            {
-                "trade_date": bar.trade_date,
-                "open": float(bar.open_price),
-                "high": float(bar.high_price),
-                "low": float(bar.low_price),
-                "close": float(bar.close_price),
-                "volume": float(bar.volume),
-                "amount": float(bar.amount),
-            }
-            for bar in bars
-        ],
+        lookback_days=180,
+        include_financials=True,
+        include_risks=True,
     )
-    if frame.empty:
-        result = StockScoreResult(symbol=symbol, name=quote.name)
-    else:
-        frame = frame.sort_values("trade_date").set_index("trade_date")
-        indicator_frame = IndicatorCalculator().calculate_all(frame)
-        result = StockScorer().score_from_indicators(
-            indicator_frame, symbol=symbol, name=quote.name
-        )
-    return build_success_response(
-        StockScoreResponse(
-            symbol=result.symbol,
-            name=result.name,
-            total_score=result.total_score,
-            tech_score=result.tech_score,
-            volume_score=result.volume_score,
-            fundamental_score=result.fundamental_score,
-            valuation_score=result.valuation_score,
-            sentiment_score=result.sentiment_score,
-            summary=result.summary,
-            strengths=result.strengths,
-            risks=result.risks,
-            suggestion=result.suggestion,
-        ),
-    )
+    return build_success_response(refresh.score)

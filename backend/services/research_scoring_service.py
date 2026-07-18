@@ -102,6 +102,41 @@ class ResearchScoringService:
                     "valuation": 15,
                     "risk": 15,
                 },
+                "fundamental_indicators": {
+                    "revenue": _value(financials, "revenue"),
+                    "revenue_growth": _value(financials, "revenue_growth"),
+                    "net_profit": _value(financials, "net_profit"),
+                    "deducted_net_profit": _value(financials, "deducted_net_profit"),
+                    "gross_margin": _value(financials, "gross_margin"),
+                    "net_margin": _value(financials, "net_margin"),
+                    "roe": _value(financials, "roe"),
+                },
+                "solvency_indicators": {
+                    "debt_ratio": _value(financials, "debt_ratio"),
+                    "current_ratio": _value(financials, "current_ratio"),
+                    "quick_ratio": _value(financials, "quick_ratio"),
+                    "cash": _value(financials, "cash"),
+                    "interest_debt": _value(financials, "interest_debt"),
+                    "operating_cashflow": _value(financials, "operating_cashflow"),
+                },
+                "technical_indicators": _technical_snapshot(indicator_frame),
+                "valuation_indicators": {
+                    "pe_ttm": _value(financials, "pe_ttm"),
+                    "pb": _value(financials, "pb"),
+                    "peg": _value(financials, "peg"),
+                    "dividend_yield": _value(financials, "dividend_yield"),
+                },
+                "risk_indicators": {
+                    "major_reduction": getattr(financials, "major_reduction", None)
+                    if financials is not None
+                    else None,
+                    "pledge_ratio": _value(financials, "pledge_ratio"),
+                    "goodwill": _value(financials, "goodwill"),
+                    "auditor_change": getattr(financials, "auditor_change", None)
+                    if financials is not None
+                    else None,
+                    "risk_count": int(risk_summary.get("risk_count") or 0),
+                },
                 "risk_summary": risk_summary,
             },
         )
@@ -154,18 +189,23 @@ class ResearchScoringService:
         latest = indicator_frame.iloc[-1]
         close = _series_value(latest, "close")
         ma5 = _series_value(latest, "ma_5")
+        ma10 = _series_value(latest, "ma_10")
         ma20 = _series_value(latest, "ma_20")
         ma60 = _series_value(latest, "ma_60")
         macd = _series_value(latest, "macd")
-        macd_signal = _series_value(latest, "macd_signal")
+        macd_signal = _series_value(latest, "macd_signal") or _series_value(
+            latest, "dea"
+        )
         rsi = _series_value(latest, "rsi")
-        kdj_k = _series_value(latest, "kdj_k")
-        kdj_d = _series_value(latest, "kdj_d")
+        kdj_k = _series_value(latest, "kdj_k") or _series_value(latest, "k")
+        kdj_d = _series_value(latest, "kdj_d") or _series_value(latest, "d")
         boll_upper = _series_value(latest, "boll_upper")
         boll_lower = _series_value(latest, "boll_lower")
         score = 0.0
-        if ma5 and ma20 and ma60 and ma5 > ma20 > ma60:
+        if ma5 and ma10 and ma20 and ma60 and ma5 > ma10 > ma20 > ma60:
             score += 5
+        elif ma5 and ma20 and ma60 and ma5 > ma20 > ma60:
+            score += 4
         elif close and ma20 and close >= ma20:
             score += 3
         else:
@@ -196,9 +236,11 @@ class ResearchScoringService:
         score = 0.0
         pe = _value(financials, "pe_ttm")
         pb = _value(financials, "pb")
+        peg = _value(financials, "peg")
         dividend_yield = _value(financials, "dividend_yield")
         score += _valuation_pe_score(pe)
         score += _valuation_pb_score(pb)
+        score += _valuation_peg_score(peg)
         score += _range_score(dividend_yield, [(4, 3), (2, 2), (1, 1)], 0)
         return min(round(score, 2), 15.0)
 
@@ -300,6 +342,40 @@ def _series_value(row: pd.Series, field_name: str) -> float | None:
         return None
 
 
+def _technical_snapshot(indicator_frame: pd.DataFrame) -> dict[str, float | None]:
+    """Return the latest technical indicators required by the scoring framework."""
+    if indicator_frame.empty:
+        return {
+            "ma5": None,
+            "ma10": None,
+            "ma20": None,
+            "ma60": None,
+            "macd": None,
+            "rsi": None,
+            "kdj_k": None,
+            "kdj_d": None,
+            "kdj_j": None,
+            "boll_upper": None,
+            "boll_mid": None,
+            "boll_lower": None,
+        }
+    latest = indicator_frame.iloc[-1]
+    return {
+        "ma5": _series_value(latest, "ma_5"),
+        "ma10": _series_value(latest, "ma_10"),
+        "ma20": _series_value(latest, "ma_20"),
+        "ma60": _series_value(latest, "ma_60"),
+        "macd": _series_value(latest, "macd"),
+        "rsi": _series_value(latest, "rsi"),
+        "kdj_k": _series_value(latest, "kdj_k") or _series_value(latest, "k"),
+        "kdj_d": _series_value(latest, "kdj_d") or _series_value(latest, "d"),
+        "kdj_j": _series_value(latest, "kdj_j") or _series_value(latest, "j"),
+        "boll_upper": _series_value(latest, "boll_upper"),
+        "boll_mid": _series_value(latest, "boll_mid"),
+        "boll_lower": _series_value(latest, "boll_lower"),
+    }
+
+
 def _positive_score(value: float | None, max_score: float) -> float:
     if value is None:
         return max_score * 0.4
@@ -347,6 +423,18 @@ def _valuation_pb_score(pb: float | None) -> float:
     if pb <= 8:
         return 2.0
     return 0.5
+
+
+def _valuation_peg_score(peg: float | None) -> float:
+    if peg is None or peg <= 0:
+        return 1.0
+    if peg <= 1:
+        return 3.0
+    if peg <= 2:
+        return 2.0
+    if peg <= 3:
+        return 1.0
+    return 0.0
 
 
 research_scoring_service = ResearchScoringService()

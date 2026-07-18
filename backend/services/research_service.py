@@ -345,7 +345,7 @@ class ResearchService:
             "operating_cashflow": _decimal_or_none(financials.operating_cashflow),
             "pe_ttm": _decimal_or_none(financials.pe_ttm),
             "pb": _decimal_or_none(financials.pb),
-            "peg": None,
+            "peg": _decimal_or_none(financials.peg),
             "dividend_yield": _decimal_or_none(financials.dividend_yield),
             "market_cap": _decimal_or_none(financials.market_cap),
             "source": "eastmoney",

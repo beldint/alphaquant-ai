@@ -22,6 +22,7 @@ class FinancialIndicators(BaseModel):
     operating_cashflow: float | None = None
     pe_ttm: float | None = None
     pb: float | None = None
+    peg: float | None = None
     dividend_yield: float | None = None
     inventory_days: float | None = None
     ar_days: float | None = None

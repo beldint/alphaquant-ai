@@ -41,16 +41,18 @@ export async function analyzeStock(symbol: string, market = 'A', lookbackDays = 
 export interface StockScoreItem {
   symbol: string;
   name: string;
+  score_date?: string;
   total_score: number;
-  tech_score: number;
-  volume_score: number;
+  technical_score: number;
   fundamental_score: number;
+  solvency_score: number;
   valuation_score: number;
-  sentiment_score: number;
-  summary: string;
+  risk_score: number;
+  rating: string;
   strengths: string[];
   risks: string[];
   suggestion: string;
+  raw_breakdown?: Record<string, unknown>;
 }
 export async function getStockScore(symbol: string, market = 'A'): Promise<ApiResponse<StockScoreItem>> {
   const { data } = await apiClient.get('/stocks/' + symbol + '/score', { params: { market } });
