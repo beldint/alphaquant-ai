@@ -32,11 +32,13 @@
         <n-grid-item><n-statistic label="数据时间" :value="stockStore.analysisResult.data_timestamp.slice(0, 10)" /></n-grid-item>
         <n-grid-item span="2"><n-statistic label="分析模型" :value="stockStore.analysisResult.model" /></n-grid-item>
       </n-grid>
+      <AnalysisReport :report="stockStore.analysisResult" :klineData="stockStore.klineData" :quote="stockStore.currentQuote" />
       
     </template>
   </div>
 </template>
 <script setup lang="ts">
+import AnalysisReport from '../components/AnalysisReport.vue';
 import { computed, ref } from 'vue';
 import { useStockStore } from '../stores/stock';
 import { NAlert, NButton, NCard, NCollapse, NCollapseItem, NGrid, NGridItem, NInput, NInputNumber, NP, NSelect, NSpace, NStatistic, useMessage } from 'naive-ui';
