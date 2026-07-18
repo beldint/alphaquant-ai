@@ -8,7 +8,7 @@
       </n-space>
     </div>
 
-    <n-modal v-model:show="showAdd" title="添加持仓" preset="card" style="width:420px">
+    <n-modal v-model:show="showAdd" title="添加持仓" preset="card" style="width:420px;max-width:95vw">
       <n-form>
         <n-form-item label="股票代码">
           <n-input v-model:value="form.symbol" placeholder="如 000001" />
@@ -50,6 +50,7 @@
       </n-grid>
     </n-card>
 
+    <div class="overflow-table">
     <n-data-table
       v-if="portfolioStore.holdings.length > 0"
       :columns="columns"
@@ -57,7 +58,8 @@
       :bordered="false"
       size="small"
     />
-    <n-empty v-else description="暂无持仓数据，点击上方添加持仓" style="margin-top:60px" />
+    </div>
+    <n-empty v-if="portfolioStore.holdings.length === 0" description="暂无持仓数据，点击上方添加持仓" style="margin-top:60px" />
   </div>
 </template>
 

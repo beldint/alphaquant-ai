@@ -14,7 +14,7 @@
 
     <n-card title="股票搜索" size="small" class="mb-24">
       <StockSearch ref="searchRef" @search="onSearchResults" />
-      <n-data-table
+      <div class="overflow-table"><n-data-table
         v-if="results.length > 0"
         :columns="columns"
         :data="results"
@@ -22,8 +22,8 @@
         size="small"
         class="mb-16"
         :max-height="400"
-      />
-      <n-empty v-else description="没有可展示的真实搜索结果" style="margin-top: 24px" />
+      /></div>
+      <n-empty v-if="results.length === 0" description="没有可展示的真实搜索结果" style="margin-top: 24px" />
     </n-card>
   </div>
 </template>

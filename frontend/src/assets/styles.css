@@ -115,3 +115,44 @@ html, body, #app {
   .page-header p { font-size: 12px; }
   .chart-container { height: 220px; min-height: 180px; }
 }
+
+/* ====== Mobile responsiveness fixes ====== */
+@media (max-width: 768px) {
+  .app-header { padding: 0 12px !important; }
+  .app-header .header-right { gap: 6px; }
+  .app-content .n-data-table-wrapper,
+  .app-content .overflow-table { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .app-content table { min-width: 600px; }
+  .n-modal { max-width: 95vw !important; }
+  .n-grid > .n-grid-item > .n-statistic .n-statistic__label { font-size: 11px; }
+  .n-statistic .n-statistic__value { font-size: 18px; }
+  .stock-detail-page .n-grid .n-statistic .n-statistic__value { font-size: 16px; }
+  .page-header { margin-bottom: 12px; }
+  .page-header h2 { font-size: 18px; }
+  .page-header .n-space { margin-top: 4px; }
+}
+
+@media (max-width: 480px) {
+  .app-header { padding: 0 8px !important; }
+  .app-content { padding: 8px !important; }
+  .n-grid.responsive > .n-grid-item { 
+    grid-column: span 2 !important;
+  }
+  .n-card-size-small .n-card-header { padding: 8px 10px; }
+  .n-card-size-small .n-card__content { padding: 8px 10px; }
+  .n-statistic .n-statistic__label { font-size: 10px; }
+  .n-statistic .n-statistic__value { font-size: 15px; }
+  .page-header h2 { font-size: 15px; }
+  .page-header p { font-size: 11px; }
+  .n-data-table .n-data-table-td,
+  .n-data-table .n-data-table-th { padding: 6px 4px !important; font-size: 11px; }
+  .n-tag { font-size: 10px; padding: 0 4px; }
+  .n-button.n-button--tiny { font-size: 11px; padding: 0 6px; }
+  .kline-chart { height: 220px !important; min-height: 160px !important; }
+}
+
+/* Portfolio modal mobile */
+@media (max-width: 450px) {
+  .n-modal { width: 95vw !important; }
+}
+

@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div class="stock-detail-page">
     <div class="page-header flex-between">
       <div>
         <h2>{{ symbol }} <span class="text-muted" style="font-weight:400;font-size:16px">{{ displayName }}</span></h2>
