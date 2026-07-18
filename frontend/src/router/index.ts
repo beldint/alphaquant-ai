@@ -11,6 +11,7 @@ export const router = createRouter({
     { path: '/financials/:symbol', name: 'financials', component: () => import('../views/FinancialView.vue'), props: true },
     { path: '/analysis', name: 'analysis', component: () => import('../views/AnalysisView.vue') },
     { path: '/watchlist', name: 'watchlist', component: () => import('../views/WatchlistView.vue') },
+    { path: '/portfolio', name: 'portfolio', component: () => import('../views/PortfolioView.vue') },
     { path: '/login', name: 'login', component: LoginView },
     { path: '/register', name: 'register', component: RegisterView },
   ],

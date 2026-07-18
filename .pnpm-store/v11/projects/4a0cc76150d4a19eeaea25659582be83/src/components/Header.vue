@@ -31,6 +31,7 @@ const routeName = computed(() => {
     dashboard: '行情中心',
     market: '股票搜索',
     watchlist: '自选股',
+    portfolio: '投资组合',
     analysis: 'AI分析',
     login: '登录',
     register: '注册',
@@ -44,7 +45,7 @@ const isLoggedIn = computed(() => authStore.isLoggedIn);
 const username = computed(() => authStore.user?.username || '');
 
 function handleClearData(): void {
-  const keys = ['ai_model', 'ai_base_url', 'ai_api_key', 'ai_custom', 'token'];
+  const keys = ['ai_model', 'ai_base_url', 'ai_api_key', 'ai_custom', 'portfolio_holdings', 'token'];
   for (const key of keys) {
     localStorage.removeItem(key);
   }
