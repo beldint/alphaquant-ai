@@ -99,6 +99,6 @@ def test_provider_priority_and_registration_include_configured_sources() -> None
         StockProviderName.EASTMONEY,
     ]
     for provider_name in settings.stock_provider_priority:
-        if provider_name == StockProviderName.BAOSTOCK:
-            continue
         assert provider_name in stock_provider_manager.providers
+    assert StockProviderName.TUSHARE not in stock_provider_manager.providers
+    assert StockProviderName.BAOSTOCK not in stock_provider_manager.providers

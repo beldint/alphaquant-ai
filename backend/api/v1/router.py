@@ -9,12 +9,10 @@ from __future__ import annotations
 
 from fastapi import APIRouter
 
-from backend.api.v1 import analysis, auth, health, research, stocks, ws
+from backend.api.v1 import analysis, health, research, stocks, ws
 
 api_router = APIRouter()
 api_router.include_router(health.router)
-api_router.include_router(auth.router)
-
 api_router.include_router(stocks.router)
 api_router.include_router(analysis.router)
 api_router.include_router(research.router)

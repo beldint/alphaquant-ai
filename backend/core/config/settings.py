@@ -296,8 +296,6 @@ class StockDataSettings(BaseAppSettings):
             StockProviderName.EASTMONEY,
             StockProviderName.AKSHARE,
             StockProviderName.YAHOO,
-            StockProviderName.TUSHARE,
-            StockProviderName.BAOSTOCK,
         ],
     )
     stock_request_timeout_seconds: float = Field(default=5.0, gt=0)

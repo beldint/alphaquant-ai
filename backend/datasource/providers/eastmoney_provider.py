@@ -203,24 +203,24 @@ class EastMoneyStockProvider(StockProvider):
             symbol=code,
             name=str(quote_data.get("f58") or code),
             report_date=_string_or_none(financial_data.get("REPORT_DATE")),
-            net_profit=_float_or_none(financial_data.get("NETPROFIT")),
+            net_profit=_float_or_none(financial_data.get("PARENTNETPROFIT")),
             deducted_net_profit=_float_or_none(
-                financial_data.get("PROFIT_DEDUCTED_NOT")
+                financial_data.get("KCFJCXSYJLR")
             ),
-            gross_margin=_float_or_none(financial_data.get("GROSSPROFIT_MARGIN")),
-            net_margin=_float_or_none(financial_data.get("NETPROFIT_MARGIN")),
-            roe=_float_or_none(financial_data.get("WEIGHTAVG_ROE")),
-            revenue=_float_or_none(financial_data.get("OPERATE_INCOME")),
-            revenue_growth=_float_or_none(financial_data.get("OPERATE_INCOME_YOY")),
-            debt_ratio=_float_or_none(financial_data.get("DEBT_ASSET_RATIO")),
-            current_ratio=_float_or_none(financial_data.get("CURRENT_RATIO")),
-            quick_ratio=_float_or_none(financial_data.get("QUICK_RATIO")),
-            operating_cashflow=_float_or_none(financial_data.get("CASHFLOW_OPERATE")),
+            gross_margin=_float_or_none(financial_data.get("XSMLL")),
+            net_margin=_float_or_none(financial_data.get("XSJLL")),
+            roe=_float_or_none(financial_data.get("ROEJQ")),
+            revenue=_float_or_none(financial_data.get("TOTALOPERATEREVE")),
+            revenue_growth=_float_or_none(financial_data.get("TOTALOPERATEREVETZ")),
+            debt_ratio=_float_or_none(financial_data.get("ZCFZL")),
+            current_ratio=_float_or_none(financial_data.get("LD")),
+            quick_ratio=_float_or_none(financial_data.get("SD")),
+            operating_cashflow=_float_or_none(financial_data.get("NETCASH_OPERATE_PK")),
             pe_ttm=_float_or_none(_scaled_decimal(quote_data.get("f162"))),
             pb=_float_or_none(_scaled_decimal(quote_data.get("f167"))),
             market_cap=_float_or_none(quote_data.get("f116")),
             total_shares=_float_or_none(
-                financial_data.get("TOTAL_SHARES") or quote_data.get("f117")
+                financial_data.get("TOTAL_SHARE") or quote_data.get("f117")
             ),
         )
 
@@ -294,13 +294,8 @@ class EastMoneyStockProvider(StockProvider):
     async def _get_latest_financial_data(self, symbol: str) -> dict[str, Any]:
         url = "https://datacenter.eastmoney.com/securities/api/data/v1/get"
         params = {
-            "reportName": "RPT_LICO_FN_CPD",
-            "columns": (
-                "SECUCODE,SECURITY_CODE,REPORT_DATE,BASIC_EPS,WEIGHTAVG_ROE,"
-                "GROSSPROFIT_MARGIN,NETPROFIT_MARGIN,DEBT_ASSET_RATIO,CURRENT_RATIO,"
-                "QUICK_RATIO,OPERATE_INCOME,NETPROFIT,PROFIT_DEDUCTED_NOT,"
-                "CASHFLOW_OPERATE,OPERATE_INCOME_YOY,TOTAL_SHARES"
-            ),
+            "reportName": "RPT_F10_FINANCE_MAINFINADATA",
+            "columns": "ALL",
             "filter": f'(SECURITY_CODE="{symbol}")',
             "pageNumber": 1,
             "pageSize": 1,

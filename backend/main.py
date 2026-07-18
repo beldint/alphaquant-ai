@@ -25,64 +25,40 @@ from backend.database.session import dispose_engine
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
-    """
-    Manage application startup and shutdown lifecycle.
-
-    Args:
-        app: FastAPI application instance.
-
-    Yields:
-        None during application runtime.
-    """
+    """Manage application startup and shutdown lifecycle."""
     setup_logging(settings)
-    logger.info("Starting {app_name} {version}", app_name=settings.app_name, version=settings.app_version)
+    logger.info(
+        "Starting {app_name} {version}",
+        app_name=settings.app_name,
+        version=settings.app_version,
+    )
     try:
-        import backend.models.stock
-        import backend.models.user
-        import backend.models.analysis
-        import backend.models.portfolio
-        import backend.models.research
-        import backend.models.watchlist
+        import backend.models.stock  # noqa: F401
+        import backend.models.analysis  # noqa: F401
+        import backend.models.portfolio  # noqa: F401
+        import backend.models.research  # noqa: F401
+        import backend.models.watchlist  # noqa: F401
         from backend.database.session import engine
+
         async with engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)
         logger.info("Database tables auto-created")
-        try:
-            from backend.database.session import AsyncSessionFactory
-            from backend.models.user import User
-            from sqlalchemy import select
-            from passlib.hash import bcrypt
-            import os
-            _env_user = os.environ.get("DEFAULT_USERNAME", "admin")
-            _env_email = os.environ.get("DEFAULT_EMAIL", "admin@example.com")
-            _env_pass = os.environ.get("DEFAULT_PASSWORD", "admin123")
-            async with AsyncSessionFactory() as _s:
-                _r = await _s.execute(select(User).where(User.username == _env_user))
-                if not _r.scalar_one_or_none():
-                    _u = User(username=_env_user, email=_env_email, hashed_password=bcrypt.hash(_env_pass), is_superuser=True)
-                    _s.add(_u)
-                    await _s.commit()
-                    logger.info("Default user created: {user}", user=_env_user)
-        except Exception as _e:
-            logger.warning("Seed user failed: {error}", error=str(_e))
     except Exception as exc:
-        logger.warning("Table creation failed: {error}", error=str(exc))
+        logger.warning(
+            "Table creation failed: {error}",
+            error=str(exc),
+        )
     yield
     logger.info("Stopping {app_name}", app_name=settings.app_name)
     try:
         await redis_cache.close()
-    except:
+    except Exception:
         pass
     await dispose_engine()
 
 
 def create_app() -> FastAPI:
-    """
-    Create and configure the FastAPI application.
-
-    Returns:
-        Configured FastAPI app.
-    """
+    """Create and configure the FastAPI application."""
     app = FastAPI(
         title=settings.app_name,
         version=settings.app_version,
@@ -105,4 +81,3 @@ def create_app() -> FastAPI:
 
 
 app = create_app()
-

@@ -1,6 +1,4 @@
 import { createRouter, createWebHistory } from 'vue-router';
-import LoginView from '../views/LoginView.vue';
-import RegisterView from '../views/RegisterView.vue';
 
 export const router = createRouter({
   history: createWebHistory(),
@@ -12,7 +10,5 @@ export const router = createRouter({
     { path: '/analysis', name: 'analysis', component: () => import('../views/AnalysisView.vue') },
     { path: '/watchlist', name: 'watchlist', component: () => import('../views/WatchlistView.vue') },
     { path: '/portfolio', name: 'portfolio', component: () => import('../views/PortfolioView.vue') },
-    { path: '/login', name: 'login', component: LoginView },
-    { path: '/register', name: 'register', component: RegisterView },
   ],
 });

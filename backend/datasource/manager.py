@@ -26,7 +26,6 @@ from backend.datasource.providers.base import (
     StockProvider,
 )
 from backend.datasource.providers.eastmoney_provider import EastMoneyStockProvider
-from backend.datasource.providers.mock_provider import MockStockProvider
 from backend.datasource.providers.sina_provider import SinaStockProvider
 from backend.datasource.providers.tencent_provider import TencentStockProvider
 from backend.datasource.providers.yahoo_provider import YahooStockProvider
@@ -135,8 +134,6 @@ class StockProviderManager:
             StockProviderName.AKSHARE: AKShareProvider(),
             StockProviderName.YAHOO: YahooStockProvider(),
             StockProviderName.EASTMONEY: EastMoneyStockProvider(),
-            StockProviderName.TUSHARE: MockStockProvider(),
-            StockProviderName.BAOSTOCK: MockStockProvider(),
         }
 
     async def _execute_with_failover(

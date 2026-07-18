@@ -4,15 +4,6 @@ export async function checkHealth(): Promise<ApiResponse<{ api: boolean; databas
   const { data } = await apiClient.get('/health');
   return data;
 }
-/* Auth */
-export async function loginApi(usernameOrEmail: string, password: string): Promise<ApiResponse<{ access_token: string; refresh_token: string; token_type: string; expires_in: number }>> {
-  const { data } = await apiClient.post('/auth/login', { username_or_email: usernameOrEmail, password });
-  return data;
-}
-export async function registerApi(username: string, email: string, password: string, fullName?: string): Promise<ApiResponse<{ id: string; username: string; email: string; full_name: string | null; is_active: boolean; is_superuser: boolean; created_at: string; updated_at: string }>> {
-  const { data } = await apiClient.post('/auth/register', { username, email, password, full_name: fullName });
-  return data;
-}
 /* Stocks */
 export async function searchStocks(keyword: string, market = 'A'): Promise<ApiResponse<Array<{ symbol: string; name: string; market: string; exchange: string; industry: string | null }>>> {
   const { data } = await apiClient.get('/stocks/search', { params: { keyword, market } });
@@ -41,13 +32,13 @@ export async function analyzeStock(symbol: string, market = 'A', lookbackDays = 
 export interface StockScoreItem {
   symbol: string;
   name: string;
-  score_date?: string;
-  total_score: number;
-  technical_score: number;
-  fundamental_score: number;
-  solvency_score: number;
-  valuation_score: number;
-  risk_score: number;
+  score_date?: string | null;
+  total_score: number | null;
+  technical_score: number | null;
+  fundamental_score: number | null;
+  solvency_score: number | null;
+  valuation_score: number | null;
+  risk_score: number | null;
   rating: string;
   strengths: string[];
   risks: string[];
