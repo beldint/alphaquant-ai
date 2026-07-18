@@ -71,6 +71,16 @@ const modelOptions = [
   { label: 'Moonshot v1', value: 'moonshot-v1-8k', apiBaseUrl: 'https://api.moonshot.cn' },
   { label: '自定义', value: '__custom__', apiBaseUrl: '' },
 ];
+
+// Auto-fill API base URL on page load
+const initModel = aiModel.value;
+if (initModel !== '__custom__') {
+  const found = modelOptions.find(o => o.value === initModel);
+  if (found && found.apiBaseUrl && !aiBaseUrl.value) {
+    aiBaseUrl.value = found.apiBaseUrl;
+    localStorage.setItem('ai_base_url', found.apiBaseUrl);
+  }
+}
 const modelHint = computed(() => {
   if (aiCustom.value && aiModel.value === '__custom__') return '当前：' + aiCustom.value;
   const found = modelOptions.find(o => o.value === aiModel.value);
