@@ -32,7 +32,7 @@
         <n-grid-item><n-statistic label="数据时间" :value="stockStore.analysisResult.data_timestamp.slice(0, 10)" /></n-grid-item>
         <n-grid-item span="2"><n-statistic label="分析模型" :value="stockStore.analysisResult.model" /></n-grid-item>
       </n-grid>
-      <AnalysisReport :report="stockStore.analysisResult" :klineData="stockStore.klineData" :quote="stockStore.currentQuote" />
+      <AnalysisReport :report="stockStore.analysisResult" :klineData="stockStore.klineData" :quote="stockStore.currentQuote" :loading="loading" />
       
     </template>
   </div>
@@ -106,7 +106,18 @@ function downloadHtml(): void {}
 async function doAnalysis(): Promise<void> {
   if (!symbol.value.trim()) { message.warning('请输入股票代码'); return; }
   loading.value = true; errorMessage.value = ''; localStorage.setItem('ai_last_symbol', symbol.value);
-  try { await stockStore.analyze(symbol.value, market.value, lookbackDays.value, aiModel.value === '__custom__' ? aiCustom.value || undefined : aiModel.value || undefined, aiBaseUrl.value || undefined, aiApiKey.value || undefined); if (stockStore.error) errorMessage.value = stockStore.error; }
+  try {
+    await stockStore.analyze(symbol.value, market.value, lookbackDays.value, aiModel.value === '__custom__' ? aiCustom.value || undefined : aiModel.value || undefined, aiBaseUrl.value || undefined, aiApiKey.value || undefined);
+    if (stockStore.error) errorMessage.value = stockStore.error;
+    // Fetch real kline data so the chart renders with actual market data
+    if (!errorMessage.value) {
+      const end = new Date();
+      const start = new Date();
+      start.setDate(start.getDate() - lookbackDays.value);
+      const fmt = (d: Date) => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+      await stockStore.fetchKline(symbol.value, market.value, fmt(start), fmt(end));
+    }
+  }
   catch (err: unknown) { errorMessage.value = err instanceof Error ? err.message : String(err); }
   finally { loading.value = false; }
 }
