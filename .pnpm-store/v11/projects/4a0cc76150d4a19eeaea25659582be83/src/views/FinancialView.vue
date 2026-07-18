@@ -79,7 +79,7 @@ const loading = ref(true);
 const hasToken = ref(true);
 
 function fmt(v: any) { if (v == null || v === 0) return '-'; if (v >= 1e8) return (v / 1e8).toFixed(2) + '亿'; if (v >= 1e4) return (v / 1e4).toFixed(2) + '万'; return typeof v === 'number' ? v.toFixed(2) : v; }
-function fmtPct(v: any) { if (v == null) return '-'; return v + '%'; }
+function fmtPct(v: any) { if (v == null) return '-'; return Number(parseFloat(v).toFixed(2)) + '%'; }
 
 onMounted(async () => {
   try {
