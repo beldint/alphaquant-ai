@@ -68,11 +68,16 @@ class ResearchService:
             start_date=start_date,
             end_date=end_date,
         )
-        financials = (
-            await stock_service.get_financial_indicators(symbol)
-            if include_financials
-            else None
-        )
+        financials = None
+        if include_financials:
+            try:
+                financials = await stock_service.get_financial_indicators(symbol)
+            except Exception as exc:
+                logger.warning(
+                    "Financial data unavailable for scoring: symbol={symbol} error={error}",
+                    symbol=symbol,
+                    error=str(exc),
+                )
         risk_summary = await self._get_risk_summary(symbol, include_risks)
         indicator_frame = self._indicator_frame(bars)
         score = research_scoring_service.score(
