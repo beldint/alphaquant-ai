@@ -64,7 +64,7 @@ onMounted(async () => {
   try {
     const res = await searchStocks("000001", "A");
     if (res.code === 0 && res.data && res.data.length > 0)
-      shIndex.value = res.data[0].symbol + " " + res.data[0].name;
+      shIndex.value = (res.data[0].symbol || res.data[0].s || "") + " " + (res.data[0].name || res.data[0].n || "");
     const res2 = await searchStocks("000333", "A");
     if (res2.code === 0 && res2.data && res2.data.length > 0)
       szIndex.value = res2.data[0].symbol + " " + res2.data[0].name;
