@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router';
 import PortfolioView from '../views/PortfolioView.vue';
 import LoginView from '../views/LoginView.vue';
 import RegisterView from '../views/RegisterView.vue';
+import FinancialView from '../views/FinancialView.vue';
 export const router = createRouter({
   history: createWebHistory(),
   routes: [
