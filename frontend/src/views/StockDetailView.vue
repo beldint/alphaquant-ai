@@ -1,9 +1,10 @@
 <template>
   <div class="stock-detail-page">
-    <div class="page-header">
+    <div class="page-header" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
       <div>
         <h2>{{ displayName }} <span class="text-muted" style="font-weight:400;font-size:14px">{{ displayMarket }}</span></h2>
       </div>
+      <n-button size="small" type="primary" @click="goToAnalysis">AI分析</n-button>
 <n-card size="small" class="mb-24" v-if="stockScore && !stockScore.data_insufficient">
       <template #header><n-space align="center"><n-h4 prefix="bar" style="margin:0">股票评分</n-h4><n-tag size="small" :type="ratingType(stockScore.rating)">评级 {{ stockScore.rating || '--' }}</n-tag></n-space></template>
       <n-grid :cols="2" :x-gap="12" :y-gap="12" responsive="screen">
@@ -70,6 +71,7 @@ import { getFinancials } from '../api';
 import { useStockStore } from '../stores/stock';
 
 const route = useRoute();
+const router = useRouter();
 
 const stockStore = useStockStore();
 
@@ -99,5 +101,11 @@ function ratingType(rating: string): 'default' | 'success' | 'info' | 'warning' 
 function switchPeriod(period: string): void { klinePeriod.value = period; const days = period === '1M' ? 30 : period === '3M' ? 90 : 180; const end = new Date().toISOString().slice(0, 10); const start = new Date(Date.now() - days * 86400000).toISOString().slice(0, 10); void stockStore.fetchKline(symbol.value, 'A', start, end); }
 function refreshPageData(): void { stockStore.clear(); void fetchFinancials(); void stockStore.fetchScore(symbol.value); void stockStore.fetchQuote(symbol.value); switchPeriod('1M'); }
 onMounted(refreshPageData);
+
+function goToAnalysis(): void {
+  var m = (quote.value && quote.value.market) ? quote.value.market : "A";
+  router.push({ path: "/analysis", query: { symbol: (symbol.value || ""), market: m } });
+}
 watch(symbol, refreshPageData);
+
 </script>

@@ -40,13 +40,27 @@
 <script setup lang="ts">
 import AnalysisReport from '../components/AnalysisReport.vue';
 import { computed, ref } from 'vue';
+import { useRoute } from 'vue-router';
 import { useStockStore } from '../stores/stock';
 import { NAlert, NButton, NCard, NCollapse, NCollapseItem, NGrid, NGridItem, NInput, NInputNumber, NP, NSelect, NSpace, NStatistic, useMessage } from 'naive-ui';
 
 const stockStore = useStockStore();
 const message = useMessage();
-const symbol = ref(localStorage.getItem('ai_last_symbol') || '');
-const market = ref('A');
+const route = useRoute();
+
+function detectMarket(sym: string): string {
+  var s = sym.trim().toUpperCase();
+  if (s.indexOf('.HK') >= 0) return 'HK';
+  if (s.indexOf('.US') >= 0) return 'US';
+  if (/^\d+$/.test(s)) return 'A';
+  return 'US';
+}
+
+var querySymbol = route.query.symbol as string | undefined;
+var queryMarket = route.query.market as string | undefined;
+
+const symbol = ref(querySymbol || localStorage.getItem('ai_last_symbol') || '');
+const market = ref(queryMarket || (symbol.value ? detectMarket(symbol.value) : 'A'));
 const lookbackDays = ref(120);
 const aiModel = ref(localStorage.getItem('ai_model') || 'deepseek-chat');
 const aiCustom = ref(localStorage.getItem('ai_custom') || '');
