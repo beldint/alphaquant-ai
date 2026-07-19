@@ -90,16 +90,10 @@ const modelOptions = [
 const initModel = aiModel.value;
 if (initModel !== '__custom__') {
   const found = modelOptions.find(o => o.value === initModel);
-  if (found && found.apiBaseUrl && !aiBaseUrl.value) {
+  if (found && found.apiBaseUrl && (!aiBaseUrl.value || !modelOptions.some(m => m.apiBaseUrl === aiBaseUrl.value))) {
     aiBaseUrl.value = found.apiBaseUrl;
     localStorage.setItem('ai_base_url', found.apiBaseUrl);
   }
-}
-function getModelLabel(val: string): string {
-  if (val === '__custom__') return '自定义';
-  const found = modelOptions.find(o => o.value === val);
-  return found ? found.label : val;
-}
 
 const modelHint = computed(() => {
   if (aiCustom.value && aiModel.value === '__custom__') return '当前：' + aiCustom.value;

@@ -105,7 +105,13 @@ const stockStore = useStockStore();
 
 const symbol = computed(() => route.params.symbol as string);
 const quote = computed(() => stockStore.currentQuote);
-const displayName = computed(() => quote.value?.name || finData.value?.name || '--');
+const displayName = computed(() => {
+  var n = quote.value?.name;
+  if (n && n !== '--') return n;
+  n = finData.value?.name;
+  if (n && n !== '--') return n;
+  return symbol.value;
+});
 const displayMarket = computed(() => {
   var m = quote.value?.market || 'A';
   if (m === 'A') return 'A股';

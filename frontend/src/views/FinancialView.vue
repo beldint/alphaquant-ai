@@ -1,7 +1,7 @@
 <template>
   <div class="financial-view">
     <div class="page-header flex-between">
-      <div><h2>{{ symbol }} 财务数据</h2><p v-if="data?.name" class="page-subtitle">{{ data.name }} · {{ dataSourceText }}</p></div>
+      <div><h2>{{ data?.name || symbol }} <span class="text-muted" style="font-weight:400;font-size:14px">({{ symbol }})</span> 财务数据</h2><p v-if="data?.name" class="page-subtitle">{{ dataSourceText }}</p></div>
       <n-button tertiary @click="$router.back()">返回</n-button>
     </div>
     <n-spin :show="loading">
