@@ -95,7 +95,7 @@ import { useRoute } from 'vue-router';
 import { NCard, NCollapse, NCollapseItem, NGrid, NGridItem, NH4, NProgress, NSpace, NStatistic, NTabPane, NTabs, NTag } from 'naive-ui';
 import KLineChart from '../components/KLineChart.vue';
 import TechnicalIndicators from '../components/TechnicalIndicators.vue';
-import { getFinancials } from '../api';
+import { getFinancials, searchStocks } from '../api';
 import { useStockStore } from '../stores/stock';
 
 const route = useRoute();
@@ -110,6 +110,7 @@ const displayName = computed(() => {
   if (n && n !== '--') return n;
   n = finData.value?.name;
   if (n && n !== '--') return n;
+  if (stockName.value) return stockName.value;
   return symbol.value;
 });
 const displayMarket = computed(() => {
@@ -123,6 +124,7 @@ const klineData = computed(() => stockStore.klineData);
 const stockScore = computed(() => stockStore.stockScore);
 const klinePeriod = ref('1M');
 const finData = ref<Record<string, any> | null>(null);
+const stockName = ref<string | null>(null);
 function toNumber(value: unknown): number | null { if (value === null || value === undefined || value === '' || value === '--') return null; const numeric = Number(String(value).replace(/,/g, '').replace('%', '')); return Number.isFinite(numeric) ? numeric : null; }
 function fmtMoney(value: unknown): string { const numeric = toNumber(value); if (numeric === null || numeric === 0) return '--'; if (Math.abs(numeric) >= 1e8) return (numeric / 1e8).toFixed(2) + ' 亿'; if (Math.abs(numeric) >= 1e4) return (numeric / 1e4).toFixed(2) + ' 万'; return numeric.toFixed(2); }
 function fmtPct(value: unknown): string { const numeric = toNumber(value); return numeric === null ? '--' : numeric.toFixed(2) + '%'; }
@@ -130,13 +132,14 @@ function fmtNum(value: unknown): string { const numeric = toNumber(value); retur
 function fmtScore(value: number | null): string { return value === null || value === undefined ? '--' : value.toFixed(1); }
 function roundTo2(value: number): number { if (!Number.isFinite(value)) return 0; return Math.round(value * 100) / 100; }
 async function fetchFinancials(): Promise<void> { try { const response = await getFinancials(symbol.value); finData.value = Number(response.code) === 0 && response.data ? response.data : null; } catch { finData.value = null; } }
+async function fetchStockName(): Promise<void> { if (stockName.value) return; try { const res = await searchStocks(symbol.value.split('.')[0], quote.value?.market === 'HK' ? 'HK' : quote.value?.market === 'US' ? 'US' : 'A'); if (res.code === 0 && res.data && res.data.length > 0) { stockName.value = res.data[0].name; } } catch { /* ignore */ } }
 function scoreColor(score: number): string { if (score >= 80) return '#18a058'; if (score >= 65) return '#2080f0'; if (score >= 50) return '#f0a020'; return '#d03050'; }
 function ratingType(rating: string): 'default' | 'success' | 'info' | 'warning' | 'error' { if (rating === 'A') return 'success'; if (rating === 'B') return 'info'; if (rating === 'C') return 'warning'; if (rating === 'D') return 'error'; return 'default'; }
 function switchPeriod(period: string): void { klinePeriod.value = period; const days = period === '1M' ? 30 : period === '3M' ? 90 : 180; const end = new Date().toISOString().slice(0, 10); const start = new Date(Date.now() - days * 86400000).toISOString().slice(0, 10); void stockStore.fetchKline(symbol.value, 'A', start, end); }
 function fmtPrice(v: any): string { var n = Number(v); if (!Number.isFinite(n) || n === 0) return '--'; return n.toFixed(2); }
 function fmtVolume(v: any): string { var n = Number(v); if (!Number.isFinite(n) || n === 0) return '--'; if (n >= 1e8) return (n / 1e8).toFixed(2) + ' 亿'; if (n >= 1e4) return (n / 1e4).toFixed(2) + ' 万'; return n.toFixed(0); }
 function fmtAmount(v: any): string { var n = Number(v); if (!Number.isFinite(n) || n === 0) return '--'; if (n >= 1e8) return (n / 1e8).toFixed(2) + ' 亿'; if (n >= 1e4) return (n / 1e4).toFixed(2) + ' 万'; return n.toFixed(0); }
-function refreshPageData(): void { stockStore.clear(); void fetchFinancials(); void stockStore.fetchScore(symbol.value); void stockStore.fetchQuote(symbol.value); switchPeriod('1M'); }
+function refreshPageData(): void { stockStore.clear(); void fetchFinancials(); void stockStore.fetchScore(symbol.value); void stockStore.fetchQuote(symbol.value); void fetchStockName(); switchPeriod('1M'); }
 onMounted(refreshPageData);
 
 function goToAnalysis(): void {
