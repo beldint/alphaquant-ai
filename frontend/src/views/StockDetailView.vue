@@ -116,16 +116,17 @@ const symbol = computed(() => cleanSymbol(route.params.symbol as string));
 const quote = computed(() => stockStore.currentQuote);
 const displayName = computed(() => {
   var n = quote.value?.name;
-  if (n && n !== '--') return n;
+  // Skip names that look like stock symbols (e.g. "000001.SZ", "600519.SS")
+  if (n && n !== '--' && !/^[A-Z0-9]+(\.[A-Z]{2,})?$/i.test(n)) return n;
   n = finData.value?.name;
-  if (n && n !== '--') return n;
+  if (n && n !== '--' && !/^[A-Z0-9]+(\.[A-Z]{2,})?$/i.test(n)) return n;
   if (stockName.value) return stockName.value;
   return symbol.value;
 });
 var cachedName = localStorage.getItem('sn_' + symbol.value);
 const stockName = ref<string | null>(cachedName);
 watch(quote, function(val) {
-  if (val && val.name && val.name !== '--' && val.name !== symbol.value) {
+  if (val && val.name && val.name !== '--' && val.name !== symbol.value && !/^[A-Z0-9]+\.[A-Z]{2,}$/i.test(val.name)) {
     stockName.value = val.name;
     try { localStorage.setItem('sn_' + symbol.value, val.name); } catch {}
   } else if (!stockName.value) {
