@@ -12,7 +12,8 @@ from backend.core.exceptions import StockException
 
 def normalize_symbol(symbol: str) -> str:
     """
-    Normalize a user-provided stock symbol to a plain six-digit A-share code.
+    Normalize a user-provided stock symbol to a plain six-digit A-share code,
+    stripping optional exchange suffixes (.SS, .SZ, .BJ) or prefixes (sh, sz, bj).
 
     Args:
         symbol: Stock code, optionally prefixed with exchange text.
@@ -21,6 +22,11 @@ def normalize_symbol(symbol: str) -> str:
         Six-digit stock symbol.
     """
     value = symbol.strip().lower()
+    # Strip .ss, .sz, .bj, .hk suffixes (e.g. "600519.ss" -> "600519")
+    for suffix in (".ss", ".sz", ".bj", ".hk"):
+        if value.endswith(suffix):
+            value = value[:-len(suffix)]
+            break
     for prefix in ("sh", "sz", "bj"):
         if value.startswith(prefix):
             value = value[2:]

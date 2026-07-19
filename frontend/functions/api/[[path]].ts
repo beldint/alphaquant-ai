@@ -46,11 +46,13 @@ const STOCKS = [
 ];
 
 function secid(symbol) {
-  return symbol.startsWith("6") || symbol.startsWith("9") ? "1." + symbol : "0." + symbol;
+  var s = cleanSymbol(symbol);
+  return s.startsWith("6") || s.startsWith("9") ? "1." + s : "0." + s;
 }
 
 function yahooSym(symbol) {
-  return symbol.startsWith("6") ? symbol + ".SS" : symbol + ".SZ";
+  var s = cleanSymbol(symbol);
+  return s.startsWith("6") ? s + ".SS" : s + ".SZ";
 }
 
 function apiResponse(data) {
@@ -65,6 +67,10 @@ function railFetch(url, method, headers, body) {
     headers,
     body,
   });
+}
+
+function cleanSymbol(s) {
+  return s.replace(/\.[A-Z]+$/, "");
 }
 
 function normalizeStock(item) {
@@ -177,8 +183,11 @@ function parseAnalysisPayload(requestText, url) {
 }
 
 function stockDisplayName(symbol) {
-  const item = STOCKS.find((stock) => stock.symbol === symbol);
-  return item ? item.name : symbol;
+  const clean = symbol.replace(/\.[A-Z]+$/, "");
+  const item = STOCKS.find((stock) => stock.symbol === clean);
+  if (item) return item.name;
+  const partial = STOCKS.find((stock) => clean.includes(stock.symbol) || stock.symbol.includes(clean));
+  return partial ? partial.name : clean;
 }
 
 function roundNumber(value, digits = 2) {
@@ -527,7 +536,7 @@ export async function onRequest(context) {
     return apiResponse({ code: 0, message: "success", data: [] });
   }
 
-  const quoteMatch = path.match(/\/api\/v1\/stocks\/(\d+)\/quote$/);
+  const quoteMatch = path.match(/\/api\/v1\/stocks\/(\d+(?:\.[A-Z]+)?)\/quote$/);
   if (quoteMatch) {
     const symbol = quoteMatch[1];
     try {
@@ -588,7 +597,7 @@ export async function onRequest(context) {
     }
   }
 
-  const klineMatch = path.match(/\/api\/v1\/stocks\/(\d+)\/kline$/);
+  const klineMatch = path.match(/\/api\/v1\/stocks\/(\d+(?:\.[A-Z]+)?)\/kline$/);
   if (klineMatch) {
     const symbol = klineMatch[1];
     const startDate = url.searchParams.get("start_date") || "";
@@ -656,7 +665,7 @@ export async function onRequest(context) {
   }
 
   if (path.startsWith("/api/v1/stocks/") && path.endsWith("/financials")) {
-    const symbol = path.split("/")[4];
+    const symbol = cleanSymbol(path.split("/")[4]);
     const tsToken = context.env.TUSHARE_TOKEN || "";
 
     try {
@@ -789,7 +798,7 @@ export async function onRequest(context) {
     });
   }
 
-  const scoreMatch = path.startsWith("/api/v1/stocks/") && path.endsWith("/score") ? [null, path.split("/")[4]] : null;
+  const scoreMatch = path.startsWith("/api/v1/stocks/") && path.endsWith("/score") ? [null, cleanSymbol(path.split("/")[4])] : null;
   if (scoreMatch) {
     const symbol = scoreMatch[1] || "";
     try {

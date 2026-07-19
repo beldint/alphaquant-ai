@@ -103,7 +103,10 @@ const route = useRoute();
 
 const stockStore = useStockStore();
 
-const symbol = computed(() => route.params.symbol as string);
+function cleanSymbol(s: string): string {
+  return s.replace(/\.[A-Z]+$/, "");
+}
+const symbol = computed(() => cleanSymbol(route.params.symbol as string));
 const quote = computed(() => stockStore.currentQuote);
 const displayName = computed(() => {
   var n = quote.value?.name;
