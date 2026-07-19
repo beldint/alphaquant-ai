@@ -41,6 +41,7 @@
 import AnalysisReport from '../components/AnalysisReport.vue';
 import { computed, ref } from 'vue';
 import { useRoute } from 'vue-router';
+import { apiClient } from '../api/client';
 import { useStockStore } from '../stores/stock';
 import { NAlert, NButton, NCard, NCollapse, NCollapseItem, NGrid, NGridItem, NInput, NInputNumber, NP, NSelect, NSpace, NStatistic, useMessage } from 'naive-ui';
 
@@ -48,6 +49,12 @@ const stockStore = useStockStore();
 const message = useMessage();
 const route = useRoute();
 
+function getModelLabel(val: string): string {
+  var found = modelOptions.find(o => o.value === val);
+  if (found) return found.label;
+  if (val) return val;
+  return '--';
+}
 function detectMarket(sym: string): string {
   var s = sym.trim().toUpperCase();
   if (s.indexOf('.HK') >= 0) return 'HK';
@@ -90,10 +97,14 @@ const modelOptions = [
 const initModel = aiModel.value;
 if (initModel !== '__custom__') {
   const found = modelOptions.find(o => o.value === initModel);
-  if (found && found.apiBaseUrl && (!aiBaseUrl.value || !modelOptions.some(m => m.apiBaseUrl === aiBaseUrl.value))) {
+  if (found && found.apiBaseUrl) {
     aiBaseUrl.value = found.apiBaseUrl;
     localStorage.setItem('ai_base_url', found.apiBaseUrl);
   }
+}
+// Auto-detect market from query param
+if (symbol.value && !queryMarket) {
+  market.value = detectMarket(symbol.value);
 }
 
 const modelHint = computed(() => {
@@ -116,17 +127,17 @@ function onModelChange(value: string): void {
   }
 }
 function clearConfig(): void { aiModel.value = 'deepseek-chat'; aiCustom.value = ''; aiBaseUrl.value = ''; aiApiKey.value = ''; localStorage.removeItem('ai_model'); localStorage.removeItem('ai_custom'); localStorage.removeItem('ai_base_url'); localStorage.removeItem('ai_api_key'); message.success('已清除 AI 配置'); }
-const downloadReport = () => {
+const downloadReport = async () => {
   var md = stockStore.analysisResult?.report_markdown;
   if (!md) { message.warning('暂无分析报告可下载'); return; }
   var symbol = stockStore.analysisResult.symbol;
   var date = stockStore.analysisResult.data_timestamp.slice(0, 10);
   var filename = '分析报告_' + symbol + '_' + date + '.md';
-  downloadViaForm(md, filename, 'text/markdown;charset=utf-8');
+  downloadViaApi(md, filename, 'text/markdown;charset=utf-8');
   message.success('下载完成');
 }
 
-const downloadHtml = () => {
+const downloadHtml = async () => {
   var md = stockStore.analysisResult?.report_markdown;
   if (!md) { message.warning('暂无分析报告可下载'); return; }
   var symbol = stockStore.analysisResult.symbol;

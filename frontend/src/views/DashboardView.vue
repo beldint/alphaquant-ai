@@ -5,10 +5,10 @@
       <p>实时行情概览，快速搜索和浏览股票数据</p>
     </div>
     <n-grid :cols="2" :x-gap="12" :y-gap="12" class="mb-24" responsive="screen">
-      <n-grid-item><n-statistic label="上证代表" :value="shIndex" :tabular-nums="true" /></n-grid-item>
-      <n-grid-item><n-statistic label="深市代表" :value="szIndex" :tabular-nums="true" /></n-grid-item>
-      <n-grid-item><n-statistic label="创业板代表" :value="cybIndex" :tabular-nums="true" /></n-grid-item>
-      <n-grid-item><n-statistic label="科创板代表" :value="kcbIndex" :tabular-nums="true" /></n-grid-item>
+      <n-grid-item><n-statistic label="上证指数" :value="shIndex" :tabular-nums="true" /></n-grid-item>
+      <n-grid-item><n-statistic label="深证成指" :value="szIndex" :tabular-nums="true" /></n-grid-item>
+      <n-grid-item><n-statistic label="创业板指" :value="cybIndex" :tabular-nums="true" /></n-grid-item>
+      <n-grid-item><n-statistic label="科创50" :value="kcbIndex" :tabular-nums="true" /></n-grid-item>
     </n-grid>
     <n-card title="股票搜索" size="small" class="mb-24">
       <StockSearch ref="searchRef" @search="onSearchResults" />

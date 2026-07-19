@@ -5,7 +5,7 @@
       <n-button tertiary @click="$router.back()">返回</n-button>
     </div>
     <n-spin :show="loading">
-      <n-alert v-if="errorMessage" type="warning" title="财务数据暂不可用" closable class="mb-24">{{ errorMessage }}</n-alert>
+      <n-alert v-if="errorMessage" type="warning" title="财务数据说明" closable class="mb-24">{{ errorMessage }}</n-alert>
       <n-empty v-if="!loading && !hasFinancialData" description="暂未获取到可展示的财务指标" />
       <n-grid v-else-if="data" :cols="1" :x-gap="12" :y-gap="12" responsive="screen">
         <n-grid-item>

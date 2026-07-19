@@ -6,10 +6,10 @@
     </div>
 
     <n-grid :cols="4" :x-gap="16" class="mb-24" responsive="screen">
-      <n-grid-item><n-statistic label="上证代表" :value="shIndex" :tabular-nums="true" /></n-grid-item>
-      <n-grid-item><n-statistic label="深市代表" :value="szIndex" :tabular-nums="true" /></n-grid-item>
-      <n-grid-item><n-statistic label="创业板代表" :value="cybIndex" :tabular-nums="true" /></n-grid-item>
-      <n-grid-item><n-statistic label="科创板代表" :value="kcbIndex" :tabular-nums="true" /></n-grid-item>
+      <n-grid-item><n-statistic label="上证指数" :value="shIndex" :tabular-nums="true" /></n-grid-item>
+      <n-grid-item><n-statistic label="深证成指" :value="szIndex" :tabular-nums="true" /></n-grid-item>
+      <n-grid-item><n-statistic label="创业板指" :value="cybIndex" :tabular-nums="true" /></n-grid-item>
+      <n-grid-item><n-statistic label="科创50" :value="kcbIndex" :tabular-nums="true" /></n-grid-item>
     </n-grid>
 
     <n-card title="股票搜索" size="small" class="mb-24">
@@ -23,7 +23,7 @@
         class="mb-16"
         :max-height="400"
       /></div>
-      <n-empty v-if="results.length === 0" description="没有可展示的真实搜索结果" style="margin-top: 24px" />
+      <n-empty v-if="results.length === 0" description="请输入股票代码或名称搜索" style="margin-top: 24px" />
     </n-card>
   </div>
 </template>
