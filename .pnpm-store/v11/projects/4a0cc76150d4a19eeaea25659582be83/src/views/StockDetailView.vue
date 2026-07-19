@@ -63,7 +63,7 @@
 </template>
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
+import { useRoute } from 'vue-router';
 import { NCard, NCollapse, NCollapseItem, NGrid, NGridItem, NH4, NProgress, NSpace, NStatistic, NTabPane, NTabs, NTag } from 'naive-ui';
 import KLineChart from '../components/KLineChart.vue';
 import TechnicalIndicators from '../components/TechnicalIndicators.vue';
@@ -71,7 +71,7 @@ import { getFinancials } from '../api';
 import { useStockStore } from '../stores/stock';
 
 const route = useRoute();
-const router = useRouter();
+
 
 const stockStore = useStockStore();
 
@@ -104,7 +104,8 @@ onMounted(refreshPageData);
 
 function goToAnalysis(): void {
   var m = (quote.value && quote.value.market) ? quote.value.market : "A";
-  router.push({ path: "/analysis", query: { symbol: (symbol.value || ""), market: m } });
+  var sym = encodeURIComponent(symbol.value || "");
+  window.location.href = "/analysis?symbol=" + sym + "&market=" + m;
 }
 watch(symbol, refreshPageData);
 
