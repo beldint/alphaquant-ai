@@ -77,6 +77,7 @@ const isEditing = ref(false);
 const refreshing = ref(false);
 const form = reactive({ symbol: '', name: '', quantity: 0, averageCost: 0 });
 let nameTimer: ReturnType<typeof setTimeout> | null = null;
+let codeTimer: ReturnType<typeof setTimeout> | null = null;
 
 const totalValue = computed(() => portfolioStore.holdings.reduce((sum, holding) => sum + holding.marketValue, 0));
 const totalPnl = computed(() => portfolioStore.holdings.reduce((sum, holding) => sum + holding.pnl, 0));
@@ -92,6 +93,23 @@ watch(() => form.symbol, (value) => {
       if (match) form.name = match.name;
     } catch {
       // Name autofill is optional.
+    }
+  }, 500);
+});
+
+watch(() => form.name, (value) => {
+  if (codeTimer) clearTimeout(codeTimer);
+  if (!value || value.length < 2) return;
+  codeTimer = setTimeout(async () => {
+    codeTimer = null;
+    try {
+      const response = await searchStocks(value, 'A');
+      if (response.code === 0 && response.data && response.data.length > 0) {
+        // Auto-fill code when name is entered (always update)
+        form.symbol = response.data[0].symbol;
+      }
+    } catch {
+      // Code autofill is optional.
     }
   }, 500);
 });
@@ -136,6 +154,11 @@ function editHolding(row: PortfolioHolding): void {
 function saveHolding(): void {
   if (!form.symbol.trim() || !form.name.trim() || form.quantity <= 0 || form.averageCost <= 0) {
     message.warning('请填写完整持仓信息');
+    return;
+  }
+  // Check for duplicate stock when adding
+  if (!isEditing.value && portfolioStore.holdings.some(function(h) { return h.symbol === form.symbol.trim(); })) {
+    message.warning('股票已添加');
     return;
   }
   portfolioStore.addOrUpdate({
