@@ -1,4 +1,4 @@
-const SEARCH_PATH = /\/api\/v1\/stocks\/search$/;
+﻿const SEARCH_PATH = /\/api\/v1\/stocks\/search$/;
 
 const STOCKS = [
   { symbol: "000001", name: "\u5e73\u5b89\u94f6\u884c", exchange: "SZSE", industry: "\u94f6\u884c" },
@@ -178,10 +178,7 @@ function parseAnalysisPayload(requestText, url) {
   };
 }
 
-function stockDisplayName(symbol) {
-  const item = STOCKS.find((stock) => stock.symbol === symbol);
-  return item ? item.name : symbol;
-}
+function stockDisplayName(symbol) { const cleanSymbol = symbol.replace(/\.[A-Z]+$/, " \); const item = STOCKS.find((stock) => stock.symbol === cleanSymbol); if (item) return item.name; const partial = STOCKS.find((stock) => cleanSymbol.includes(stock.symbol) || stock.symbol.includes(cleanSymbol)); return partial ? partial.name : cleanSymbol; }
 
 function roundNumber(value, digits = 2) {
   if (!Number.isFinite(value)) return null;
@@ -262,7 +259,7 @@ function summarizeKline(rows) {
   const volumes = rows.map((row) => row.volume).filter((value) => Number.isFinite(value));
   if (closes.length === 0) {
     return {
-      trend: "数据不足",
+      trend: "鏁版嵁涓嶈冻",
       close: null,
       change_pct: null,
       ma5: null,
@@ -277,9 +274,9 @@ function summarizeKline(rows) {
   const sliceAverage = (items, count) => items.slice(-Math.min(count, items.length)).reduce((sum, value) => sum + value, 0) / Math.min(count, items.length);
   const ma5 = sliceAverage(closes, 5);
   const ma20 = sliceAverage(closes, 20);
-  let trend = "震荡";
-  if (last > ma5 && ma5 > ma20) trend = "短期偏强";
-  if (last < ma5 && ma5 < ma20) trend = "短期偏弱";
+  let trend = "闇囪崱";
+  if (last > ma5 && ma5 > ma20) trend = "鐭湡鍋忓己";
+  if (last < ma5 && ma5 < ma20) trend = "鐭湡鍋忓急";
   return {
     trend,
     close: roundNumber(last),
@@ -301,35 +298,35 @@ async function buildFallbackAnalysis(payload) {
   const klineRows = await fetchKlineFallback(symbol, lookbackDays);
   const technical = summarizeKline(klineRows);
   const dataTimestamp = new Date().toISOString();
-  const priceLine = quote.price == null ? "当前行情暂不可用" : `现价 ${roundNumber(quote.price)}，涨跌幅 ${roundNumber(quote.pct_change || 0)}%`;
+  const priceLine = quote.price == null ? "褰撳墠琛屾儏鏆備笉鍙敤" : `鐜颁环 ${roundNumber(quote.price)}锛屾定璺屽箙 ${roundNumber(quote.pct_change || 0)}%`;
   const report = [
-    `# ${quote.name || stockDisplayName(symbol)}(${symbol}) AI 分析报告`,
+    `# ${quote.name || stockDisplayName(symbol)}(${symbol}) AI 鍒嗘瀽鎶ュ憡`,
     "",
-    `生成时间：${dataTimestamp}`,
-    `数据来源：Cloudflare Pages 边缘兜底，Railway 后端暂不可用`,
+    `鐢熸垚鏃堕棿锛?{dataTimestamp}`,
+    `鏁版嵁鏉ユ簮锛欳loudflare Pages 杈圭紭鍏滃簳锛孯ailway 鍚庣鏆備笉鍙敤`,
     "",
-    "## 行情概览",
+    "## 琛屾儏姒傝",
     `- ${priceLine}`,
-    `- 回看周期：${lookbackDays} 天，样本数量：${klineRows.length}`,
-    `- 区间涨跌幅：${technical.change_pct == null ? "数据不足" : technical.change_pct + "%"}`,
+    `- 鍥炵湅鍛ㄦ湡锛?{lookbackDays} 澶╋紝鏍锋湰鏁伴噺锛?{klineRows.length}`,
+    `- 鍖洪棿娑ㄨ穼骞咃細${technical.change_pct == null ? "鏁版嵁涓嶈冻" : technical.change_pct + "%"}`,
     "",
-    "## 技术面",
-    `- 趋势判断：${technical.trend}`,
-    `- MA5：${technical.ma5 ?? "无"}，MA20：${technical.ma20 ?? "无"}`,
-    `- 区间高点：${technical.high ?? "无"}，区间低点：${technical.low ?? "无"}`,
-    `- 平均成交量：${technical.avg_volume ?? "无"}`,
+    "## 鎶€鏈潰",
+    `- 瓒嬪娍鍒ゆ柇锛?{technical.trend}`,
+    `- MA5锛?{technical.ma5 ?? "鏃?}锛孧A20锛?{technical.ma20 ?? "鏃?}`,
+    `- 鍖洪棿楂樼偣锛?{technical.high ?? "鏃?}锛屽尯闂翠綆鐐癸細${technical.low ?? "鏃?}`,
+    `- 骞冲潎鎴愪氦閲忥細${technical.avg_volume ?? "鏃?}`,
     "",
-    "## 风险提示",
-    "- 当前报告由边缘兜底逻辑生成，未调用完整 AI 后端和完整财务数据库。",
-    "- Railway 后端恢复后，系统会自动返回完整模型分析报告。",
-    "- 若价格、成交量或财务数据缺失，应等待数据源恢复后重新分析。",
+    "## 椋庨櫓鎻愮ず",
+    "- 褰撳墠鎶ュ憡鐢辫竟缂樺厹搴曢€昏緫鐢熸垚锛屾湭璋冪敤瀹屾暣 AI 鍚庣鍜屽畬鏁磋储鍔℃暟鎹簱銆?,
+    "- Railway 鍚庣鎭㈠鍚庯紝绯荤粺浼氳嚜鍔ㄨ繑鍥炲畬鏁存ā鍨嬪垎鏋愭姤鍛娿€?,
+    "- 鑻ヤ环鏍笺€佹垚浜ら噺鎴栬储鍔℃暟鎹己澶憋紝搴旂瓑寰呮暟鎹簮鎭㈠鍚庨噸鏂板垎鏋愩€?,
     "",
-    "## 操作观察",
-    technical.trend === "短期偏强"
-      ? "- 短线趋势相对积极，可继续观察成交量是否同步放大。"
-      : technical.trend === "短期偏弱"
-        ? "- 短线趋势偏弱，优先关注均线修复和止跌信号。"
-        : "- 当前趋势偏震荡，适合结合支撑压力位和成交量变化继续跟踪。",
+    "## 鎿嶄綔瑙傚療",
+    technical.trend === "鐭湡鍋忓己"
+      ? "- 鐭嚎瓒嬪娍鐩稿绉瀬锛屽彲缁х画瑙傚療鎴愪氦閲忔槸鍚﹀悓姝ユ斁澶с€?
+      : technical.trend === "鐭湡鍋忓急"
+        ? "- 鐭嚎瓒嬪娍鍋忓急锛屼紭鍏堝叧娉ㄥ潎绾夸慨澶嶅拰姝㈣穼淇″彿銆?
+        : "- 褰撳墠瓒嬪娍鍋忛渿鑽★紝閫傚悎缁撳悎鏀拺鍘嬪姏浣嶅拰鎴愪氦閲忓彉鍖栫户缁窡韪€?,
   ].join("\n");
 
   return {
@@ -717,8 +714,8 @@ export async function onRequest(context) {
               total_score: null,
               rating: "--",
               strengths: [],
-              risks: ["技术数据已获取，但财务和风险数据未能获取，无法进行完整评分"],
-              suggestion: "当前股票由于财务数据未能获取，仅能根据技术指标进行部分分析，无法进行完整评分。",
+              risks: ["鎶€鏈暟鎹凡鑾峰彇锛屼絾璐㈠姟鍜岄闄╂暟鎹湭鑳借幏鍙栵紝鏃犳硶杩涜瀹屾暣璇勫垎"],
+              suggestion: "褰撳墠鑲＄エ鐢变簬璐㈠姟鏁版嵁鏈兘鑾峰彇锛屼粎鑳芥牴鎹妧鏈寚鏍囪繘琛岄儴鍒嗗垎鏋愶紝鏃犳硶杩涜瀹屾暣璇勫垎銆?,
               data_insufficient: true,
             },
           })
@@ -755,3 +752,4 @@ export async function onRequest(context) {
 
   return rail();
 }
+
