@@ -1,4 +1,4 @@
-"""
+﻿"""
 Project: AlphaQuant AI
 File: backend/datasource/providers/stock_code.py
 Description: A-share stock code normalization helpers for public market APIs.
@@ -47,6 +47,15 @@ def infer_exchange(symbol: str) -> str:
         SSE, SZSE, BSE, or UNKNOWN.
     """
     code = normalize_symbol(symbol)
+    # Known SSE/CSI index codes in 000xxx range (belong to SSE, not SZSE)
+    SSE_INDEX_CODES_000 = {
+        "000016",  # SSE 50
+        "000300",  # CSI 300
+        "000688",  # STAR 50 / KeChuang50
+        "000905",  # CSI 500
+    }
+    if code in SSE_INDEX_CODES_000:
+        return "SSE"
     if code.startswith(("5", "6", "9")):
         return "SSE"
     if code.startswith(("0", "2", "3")):

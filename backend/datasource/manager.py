@@ -1,4 +1,4 @@
-"""
+﻿"""
 Project: AlphaQuant AI
 File: backend/datasource/manager.py
 Description: Stock provider manager with priority failover and retry support.
@@ -53,6 +53,9 @@ class StockProviderManager:
     ) -> list[StockIdentity]:
         """
         Search stocks through prioritized providers.
+        Skips providers that return empty results so name-based
+        search falls through to East Money when code-based
+        providers (Tencent, Sina) cannot match a keyword.
 
         Args:
             keyword: Stock code or name keyword.
@@ -61,9 +64,28 @@ class StockProviderManager:
         Returns:
             Matched stock identities.
         """
-        return await self._execute_with_failover(
-            lambda provider: provider.search_stocks(keyword, market),
-        )
+        errors: list[str] = []
+        for provider_name in self.settings.stock_provider_priority:
+            provider = self.providers.get(provider_name)
+            if provider is None:
+                errors.append(f"{provider_name.value}: provider is not registered")
+                continue
+            try:
+                result = await self._retry_provider_operation(
+                    provider,
+                    lambda p: p.search_stocks(keyword, market),
+                )
+                if result:
+                    return result
+            except StockException as exc:
+                logger.warning(
+                    "Stock search failed: provider={} keyword={} error={}",
+                    provider_name.value,
+                    keyword,
+                    exc.message,
+                )
+                errors.append(f"{provider_name.value}: {exc.message}")
+        return []
 
     async def get_realtime_quote(
         self,
@@ -162,10 +184,18 @@ class StockProviderManager:
                 return await self._retry_provider_operation(provider, operation)
             except StockException as exc:
                 logger.warning(
-                    "Stock provider failed: provider={provider} error={error}",
-                    provider=provider_name.value,
-                    error=exc.message,
+                    "Stock provider failed: provider={} error={}",
+                    provider_name.value,
+                    exc.message,
                 )
+                errors.append(f"{provider_name.value}: {exc.message}")
+            except Exception as exc:
+                logger.warning(
+                    "Provider non-StockException: provider={} error={}",
+                    provider_name.value,
+                    str(exc),
+                )
+                errors.append(f"{provider_name.value}: {str(exc)}")
                 errors.append(f"{provider_name.value}: {exc.message}")
         raise StockException(
             "All stock providers failed",

@@ -1,5 +1,5 @@
-<template>
-  <n-config-provider :theme="darkTheme" class="h-full">
+﻿<template>
+  <n-config-provider :theme="currentTheme" :theme-overrides="currentOverrides" class="h-full">
     <n-message-provider>
       <n-dialog-provider>
         <div class="app-layout">
@@ -28,10 +28,29 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
-import { darkTheme, NConfigProvider, NMessageProvider, NDialogProvider } from 'naive-ui';
+import { computed, ref } from 'vue';
+import {
+  NConfigProvider, NMessageProvider, NDialogProvider,
+  darkTheme,
+} from 'naive-ui';
 import Sidebar from './components/Sidebar.vue';
 import Header from './components/Header.vue';
+import { useThemeStore } from './stores/theme';
 
+const themeStore = useThemeStore();
+
+const currentTheme = computed(() => {
+  if (themeStore.mode === 'night') return darkTheme;
+  return null;
+});
+
+const currentOverrides = computed(() => {
+  switch (themeStore.mode) {
+    case 'night': return themeStore.nightOverrides;
+    case 'day': return themeStore.dayOverrides;
+    case 'eyeCare': return themeStore.eyeCareOverrides;
+    default: return null;
+  }
+});
 const sidebarOpen = ref(false);
 </script>

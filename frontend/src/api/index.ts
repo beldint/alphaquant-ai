@@ -1,4 +1,4 @@
-import { apiClient, type ApiResponse } from './client';
+﻿import { apiClient, type ApiResponse } from './client';
 /* Health */
 export async function checkHealth(): Promise<ApiResponse<{ api: boolean; database: boolean; redis: boolean }>> {
   const { data } = await apiClient.get('/health');
@@ -24,7 +24,7 @@ export async function getFinancials(symbol: string, market = 'A'): Promise<ApiRe
 }
 
 export async function analyzeStock(symbol: string, market = 'A', lookbackDays = 120, model?: string, apiBaseUrl?: string, apiKey?: string, provider?: string): Promise<ApiResponse<{ symbol: string; market: string; provider: string; model: string; report_markdown: string; objective_data: Record<string, unknown>; technical_summary: Record<string, unknown>; risk_summary: Record<string, unknown>; data_timestamp: string }>> {
-  const { data } = await apiClient.post('/analysis/stock', { symbol, market, lookback_days: lookbackDays, model: model || undefined, api_base_url: apiBaseUrl || undefined, api_key: apiKey || undefined, provider: provider || undefined });
+  const { data } = await apiClient.post('/analysis/stock', { symbol, market, lookback_days: lookbackDays, model: model || undefined, api_base_url: apiBaseUrl || undefined, api_key: apiKey || undefined, provider: provider || undefined }, { timeout: 180000 });
   return data;
 }
 

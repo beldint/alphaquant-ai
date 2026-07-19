@@ -1,17 +1,48 @@
-:root {
+﻿:root {
   --sidebar-width: 240px;
   --header-height: 56px;
-  --bg-color: #101014;
-  --card-bg: #1a1a22;
-  --border-color: #2c2c3a;
-  --text-primary: #e5e5e5;
-  --text-secondary: #999;
-  --accent-color: #2080f0;
   --up-color: #00c853;
   --down-color: #ff1744;
+  --card-shadow: 0 2px 8px rgba(0,0,0,0.25);
+}
+
+/* ====== 护眼 (Eye-care) — soft green "绿豆沙" ====== */
+.theme-eye-care {
+  --bg-color: #a0d0a8;
+  --card-bg: #cce8d0;
+  --border-color: #6aaa78;
+  --text-primary: #111111;
+  --text-secondary: #2d4a2d;
+  --accent-color: #2080f0;
+  --card-shadow: 0 2px 8px rgba(0,0,0,0.12);
+}
+
+/* ====== 白天 (Day/Light) — clean white ====== */
+.theme-day {
+  --bg-color: #f0f2f5;
+  --card-bg: #ffffff;
+  --border-color: #c8ccd4;
+  --text-primary: #111111;
+  --text-secondary: #4a4d6a;
+  --accent-color: #2080f0;
+  --card-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+
+/* ====== 黑夜 (Night/Dark) — current default ====== */
+:root,
+.theme-night {
+  --bg-color: #5a5a74;
+  --card-bg: #727290;
+  --border-color: #8686a4;
+  --text-primary: #ffffff;
+  --text-secondary: #dcdcf0;
+  --accent-color: #72b8ff;
+  --card-shadow: 0 2px 8px rgba(0,0,0,0.25);
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
+
+html { font-size: 16px; line-height: 1.6; }
 
 html, body, #app {
   height: 100%;
@@ -28,6 +59,7 @@ html, body, #app {
   flex-shrink: 0;
   background: var(--card-bg);
   border-right: 1px solid var(--border-color);
+  box-shadow: var(--card-shadow);
   display: flex;
   flex-direction: column;
   z-index: 100;

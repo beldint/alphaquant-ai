@@ -4,7 +4,10 @@
       <div>
         <h2>{{ displayName }} <span class="text-muted" style="font-weight:400;font-size:14px">{{ displayMarket }}</span></h2>
       </div>
-      <n-button size="small" type="primary" @click="goToAnalysis">AI分析</n-button>
+      <n-space>
+        <n-button size="small" :type="isInWatchlist ? 'warning' : 'primary'" @click="toggleWatchlist">{{ isInWatchlist ? '移除自选' : '加自选' }}</n-button>
+        <n-button size="small" type="primary" @click="goToAnalysis">AI分析</n-button>
+      </n-space>
 <n-card size="small" class="mb-24" v-if="quote && quote.price && (Number(quote.price) > 0 || Number(quote.volume) > 0 || Number(quote.amount) > 0)">
       <n-grid :cols="2" :x-gap="12" :y-gap="8" responsive="screen">
         <n-grid-item>
@@ -91,17 +94,20 @@
 </template>
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue';
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import { NCard, NCollapse, NCollapseItem, NGrid, NGridItem, NH4, NProgress, NSpace, NStatistic, NTabPane, NTabs, NTag } from 'naive-ui';
 import KLineChart from '../components/KLineChart.vue';
 import TechnicalIndicators from '../components/TechnicalIndicators.vue';
 import { getFinancials, searchStocks } from '../api';
 import { useStockStore } from '../stores/stock';
+import { useWatchlistStore } from '../stores/watchlist';
 
 const route = useRoute();
+const router = useRouter();
 
 
 const stockStore = useStockStore();
+const watchlistStore = useWatchlistStore();
 
 function cleanSymbol(s: string): string {
   return s.replace(/\.[A-Z]+$/, "");
@@ -116,6 +122,8 @@ const displayName = computed(() => {
   if (stockName.value) return stockName.value;
   return symbol.value;
 });
+var cachedName = localStorage.getItem('sn_' + symbol.value);
+const stockName = ref<string | null>(cachedName);
 watch(quote, function(val) {
   if (val && val.name && val.name !== '--' && val.name !== symbol.value) {
     stockName.value = val.name;
@@ -124,8 +132,16 @@ watch(quote, function(val) {
     void fetchStockName();
   }
 }, { immediate: true });
+const currentMarket = computed(() => (route.query.market as string) || quote.value?.market || 'A');
+const isInWatchlist = computed(() => watchlistStore.isInWatchlist(symbol.value));
+
+function toggleWatchlist(): void {
+  var name = quote.value?.name || displayName.value;
+  watchlistStore.toggle(symbol.value, name, currentMarket.value);
+}
+
 const displayMarket = computed(() => {
-  var m = quote.value?.market || 'A';
+  var m = currentMarket.value;
   if (m === 'A') return 'A股';
   if (m === 'HK') return '港股';
   if (m === 'US') return '美股';
@@ -136,8 +152,6 @@ const stockScore = computed(() => stockStore.stockScore);
 const klinePeriod = ref('1M');
 const finData = ref<Record<string, any> | null>(null);
 // Load cached stock name from localStorage
-var cachedName = localStorage.getItem('sn_' + symbol.value);
-const stockName = ref<string | null>(cachedName);
 function toNumber(value: unknown): number | null { if (value === null || value === undefined || value === '' || value === '--') return null; const numeric = Number(String(value).replace(/,/g, '').replace('%', '')); return Number.isFinite(numeric) ? numeric : null; }
 function fmtMoney(value: unknown): string { const numeric = toNumber(value); if (numeric === null || numeric === 0) return '--'; if (Math.abs(numeric) >= 1e8) return (numeric / 1e8).toFixed(2) + ' 亿'; if (Math.abs(numeric) >= 1e4) return (numeric / 1e4).toFixed(2) + ' 万'; return numeric.toFixed(2); }
 function fmtPct(value: unknown): string { const numeric = toNumber(value); return numeric === null ? '--' : numeric.toFixed(2) + '%'; }
@@ -148,17 +162,16 @@ async function fetchFinancials(): Promise<void> { try { const response = await g
 async function fetchStockName(): Promise<void> { if (stockName.value) return; try { var code = symbol.value.split('.')[0]; var markets = [quote.value?.market || 'A', 'A', 'HK', 'US']; var seenMarkets = new Set(); for (var m of markets) { if (seenMarkets.has(m)) continue; seenMarkets.add(m); try { var res = await searchStocks(code, m); if (res.code === 0 && res.data && res.data.length > 0) { stockName.value = res.data[0].name; try { localStorage.setItem('sn_' + symbol.value, res.data[0].name); } catch {} return; } } catch {} } try { var res2 = await searchStocks(symbol.value, quote.value?.market || 'A'); if (res2.code === 0 && res2.data && res2.data.length > 0) { stockName.value = res2.data[0].name; try { localStorage.setItem('sn_' + symbol.value, res2.data[0].name); } catch {} return; } } catch {} } catch { /* ignore */ } }
 function scoreColor(score: number): string { if (score >= 80) return '#18a058'; if (score >= 65) return '#2080f0'; if (score >= 50) return '#f0a020'; return '#d03050'; }
 function ratingType(rating: string): 'default' | 'success' | 'info' | 'warning' | 'error' { if (rating === 'A') return 'success'; if (rating === 'B') return 'info'; if (rating === 'C') return 'warning'; if (rating === 'D') return 'error'; return 'default'; }
-function switchPeriod(period: string): void { klinePeriod.value = period; const days = period === '1M' ? 30 : period === '3M' ? 90 : 180; const end = new Date().toISOString().slice(0, 10); const start = new Date(Date.now() - days * 86400000).toISOString().slice(0, 10); void stockStore.fetchKline(symbol.value, 'A', start, end); }
+function switchPeriod(period: string): void { klinePeriod.value = period; const days = period === '1M' ? 30 : period === '3M' ? 90 : 180; const end = new Date().toISOString().slice(0, 10); const start = new Date(Date.now() - days * 86400000).toISOString().slice(0, 10); void stockStore.fetchKline(symbol.value, currentMarket.value, start, end); }
 function fmtPrice(v: any): string { var n = Number(v); if (!Number.isFinite(n) || n === 0) return '--'; return n.toFixed(2); }
 function fmtVolume(v: any): string { var n = Number(v); if (!Number.isFinite(n) || n === 0) return '--'; if (n >= 1e8) return (n / 1e8).toFixed(2) + ' 亿'; if (n >= 1e4) return (n / 1e4).toFixed(2) + ' 万'; return n.toFixed(0); }
 function fmtAmount(v: any): string { var n = Number(v); if (!Number.isFinite(n) || n === 0) return '--'; if (n >= 1e8) return (n / 1e8).toFixed(2) + ' 亿'; if (n >= 1e4) return (n / 1e4).toFixed(2) + ' 万'; return n.toFixed(0); }
-function refreshPageData(): void { stockStore.clear(); void fetchFinancials(); void stockStore.fetchScore(symbol.value); void stockStore.fetchQuote(symbol.value); void fetchStockName(); switchPeriod('1M'); }
+function refreshPageData(): void { stockStore.clear(); void fetchFinancials(); void stockStore.fetchScore(symbol.value, currentMarket.value); void stockStore.fetchQuote(symbol.value, currentMarket.value); void fetchStockName(); switchPeriod('1M'); }
 onMounted(refreshPageData);
 
 function goToAnalysis(): void {
   var m = (quote.value && quote.value.market) ? quote.value.market : "A";
-  var sym = encodeURIComponent(symbol.value || "");
-  window.location.href = "/analysis?symbol=" + sym + "&market=" + m;
+  router.push({ name: 'analysis', query: { symbol: symbol.value || "", market: m } });
 }
 watch(symbol, refreshPageData);
 

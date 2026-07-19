@@ -1,0 +1,1 @@
+function f(r){return r?r==="SSE"?"上交所":r==="SZSE"?"深交所":r==="HKEX"?"港交所":r==="NASDAQ"?"纳斯达克":r==="NYSE"?"纽交所":r==="AMEX"?"美交所":r:"-"}function t(r){return r?r==="A"?"A股":r==="HK"?"港股":r==="US"?"美股":r:"-"}export{t as a,f};

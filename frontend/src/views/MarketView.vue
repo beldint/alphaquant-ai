@@ -1,18 +1,18 @@
-<template>
+﻿<template>
   <div>
     <div class="page-header">
-      <h2>行情中心</h2>
-      <p>实时行情概览、快速搜索和浏览股票数据</p>
+      <h2>琛屾儏涓績</h2>
+      <p>瀹炴椂琛屾儏姒傝銆佸揩閫熸悳绱㈠拰娴忚鑲＄エ鏁版嵁</p>
     </div>
 
     <n-grid :cols="4" :x-gap="16" class="mb-24" responsive="screen">
-      <n-grid-item><n-statistic label="上证指数" :value="shIndex" :tabular-nums="true" /></n-grid-item>
-      <n-grid-item><n-statistic label="深证成指" :value="szIndex" :tabular-nums="true" /></n-grid-item>
-      <n-grid-item><n-statistic label="创业板指" :value="cybIndex" :tabular-nums="true" /></n-grid-item>
-      <n-grid-item><n-statistic label="科创50" :value="kcbIndex" :tabular-nums="true" /></n-grid-item>
+      <n-grid-item><n-statistic label="涓婅瘉鎸囨暟" :value="shIndex" :tabular-nums="true" /></n-grid-item>
+      <n-grid-item><n-statistic label="娣辫瘉鎴愭寚" :value="szIndex" :tabular-nums="true" /></n-grid-item>
+      <n-grid-item><n-statistic label="鍒涗笟鏉挎寚" :value="cybIndex" :tabular-nums="true" /></n-grid-item>
+      <n-grid-item><n-statistic label="绉戝垱50" :value="kcbIndex" :tabular-nums="true" /></n-grid-item>
     </n-grid>
 
-    <n-card title="股票搜索" size="small" class="mb-24">
+    <n-card title="鑲＄エ鎼滅储" size="small" class="mb-24">
       <StockSearch ref="searchRef" @search="onSearchResults" />
       <div class="overflow-table"><n-data-table
         v-if="results.length > 0"
@@ -23,7 +23,7 @@
         class="mb-16"
         :max-height="400"
       /></div>
-      <n-empty v-if="results.length === 0" description="请输入股票代码或名称搜索" style="margin-top: 24px" />
+      <n-empty v-if="results.length === 0" description="璇疯緭鍏ヨ偂绁ㄤ唬鐮佹垨鍚嶇О鎼滅储" style="margin-top: 24px" />
     </n-card>
   </div>
 </template>
@@ -59,7 +59,7 @@ function addWatch(row: StockRow): void {
 }
 
 function goDetail(row: StockRow): void {
-  router.push({ name: 'stockDetail', params: { symbol: row.symbol } });
+  router.push({ name: 'stockDetail', params: { symbol: row.symbol }, query: { market: row.market } });
 }
 
 function exchangeTag(row: StockRow) {
@@ -68,17 +68,17 @@ function exchangeTag(row: StockRow) {
 
 function actionButtons(row: StockRow) {
   return [
-    h(NButton, { size: 'tiny', type: 'primary', style: 'margin-right:8px', onClick: () => goDetail(row) }, () => '详情'),
+    h(NButton, { size: 'tiny', type: 'primary', style: 'margin-right:8px', onClick: () => goDetail(row) }, () => '璇︽儏'),
     h(NButton, { size: 'tiny', quaternary: true, onClick: () => addWatch(row) }, () => '加自选'),
   ];
 }
 
 const columns: DataTableColumn<StockRow>[] = [
-  { title: '代码', key: 'symbol', width: 100 },
-  { title: '名称', key: 'name', width: 140 },
-  { title: '市场', key: 'exchangeTag', width: 96, render: exchangeTag },
-  { title: '行业', key: 'industry', render: (row) => row.industry || '--' },
-  { title: '操作', key: 'actions', width: 160, render: actionButtons },
+  { title: '浠ｇ爜', key: 'symbol', width: 100 },
+  { title: '鍚嶇О', key: 'name', width: 140 },
+  { title: '甯傚満', key: 'exchangeTag', width: 96, render: exchangeTag },
+  { title: '琛屼笟', key: 'industry', render: (row) => row.industry || '--' },
+  { title: '鎿嶄綔', key: 'actions', width: 160, render: actionButtons },
 ];
 
 async function loadIndexHint(symbol: string): Promise<string> {

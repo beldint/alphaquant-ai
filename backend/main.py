@@ -28,7 +28,6 @@ if _ssl_keylog:
         except (OSError, PermissionError):
             # If still fails, disable SSL key logging entirely
             os.environ.pop("SSLKEYLOGFILE", None)
-del _ssl_keylog, writable_path
 
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
