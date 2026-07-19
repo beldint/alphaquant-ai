@@ -707,7 +707,7 @@ export async function onRequest(context) {
             message: "success",
             data: {
               symbol,
-              name: symbol,
+              name: stockDisplayName(symbol),
               score_date: null,
               fundamental_score: null,
               solvency_score: null,
