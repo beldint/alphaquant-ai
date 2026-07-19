@@ -5,7 +5,7 @@
         <h2>{{ displayName }} <span class="text-muted" style="font-weight:400;font-size:14px">{{ displayMarket }}</span></h2>
       </div>
       <n-button size="small" type="primary" @click="goToAnalysis">AI分析</n-button>
-<n-card size="small" class="mb-24" v-if="quote && quote.price">
+<n-card size="small" class="mb-24" v-if="quote && quote.price && (Number(quote.price) > 0 || Number(quote.volume) > 0 || Number(quote.amount) > 0)">
       <n-grid :cols="2" :x-gap="12" :y-gap="8" responsive="screen">
         <n-grid-item>
           <div style="display:flex;align-items:baseline;gap:8px">
@@ -120,9 +120,9 @@ async function fetchFinancials(): Promise<void> { try { const response = await g
 function scoreColor(score: number): string { if (score >= 80) return '#18a058'; if (score >= 65) return '#2080f0'; if (score >= 50) return '#f0a020'; return '#d03050'; }
 function ratingType(rating: string): 'default' | 'success' | 'info' | 'warning' | 'error' { if (rating === 'A') return 'success'; if (rating === 'B') return 'info'; if (rating === 'C') return 'warning'; if (rating === 'D') return 'error'; return 'default'; }
 function switchPeriod(period: string): void { klinePeriod.value = period; const days = period === '1M' ? 30 : period === '3M' ? 90 : 180; const end = new Date().toISOString().slice(0, 10); const start = new Date(Date.now() - days * 86400000).toISOString().slice(0, 10); void stockStore.fetchKline(symbol.value, 'A', start, end); }
-function fmtPrice(v: any): string { var n = Number(v); return Number.isFinite(n) ? n.toFixed(2) : '--'; }
-function fmtVolume(v: any): string { var n = Number(v); if (!Number.isFinite(n)) return '--'; if (n >= 1e8) return (n / 1e8).toFixed(2) + ' 亿'; if (n >= 1e4) return (n / 1e4).toFixed(2) + ' 万'; return n.toFixed(0); }
-function fmtAmount(v: any): string { var n = Number(v); if (!Number.isFinite(n)) return '--'; if (n >= 1e8) return (n / 1e8).toFixed(2) + ' 亿'; if (n >= 1e4) return (n / 1e4).toFixed(2) + ' 万'; return n.toFixed(0); }
+function fmtPrice(v: any): string { var n = Number(v); if (!Number.isFinite(n) || n === 0) return '--'; return n.toFixed(2); }
+function fmtVolume(v: any): string { var n = Number(v); if (!Number.isFinite(n) || n === 0) return '--'; if (n >= 1e8) return (n / 1e8).toFixed(2) + ' 亿'; if (n >= 1e4) return (n / 1e4).toFixed(2) + ' 万'; return n.toFixed(0); }
+function fmtAmount(v: any): string { var n = Number(v); if (!Number.isFinite(n) || n === 0) return '--'; if (n >= 1e8) return (n / 1e8).toFixed(2) + ' 亿'; if (n >= 1e4) return (n / 1e4).toFixed(2) + ' 万'; return n.toFixed(0); }
 function refreshPageData(): void { stockStore.clear(); void fetchFinancials(); void stockStore.fetchScore(symbol.value); void stockStore.fetchQuote(symbol.value); switchPeriod('1M'); }
 onMounted(refreshPageData);
 
