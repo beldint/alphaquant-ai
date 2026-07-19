@@ -74,14 +74,14 @@
           <n-grid :cols="2" :x-gap="12" :y-gap="8" responsive="screen">
             <n-grid-item><n-statistic label="PE(市率,估值指标)" :value="fmtNum(finData.pe_ttm)" /></n-grid-item>
             <n-grid-item><n-statistic label="PB(市净率,估值指标)" :value="fmtNum(finData.pb)" /></n-grid-item>
-            <n-grid-item><n-statistic label="营收增长" :value="fmtPct(finData.revenue_growth)" /></n-grid-item>
+            <n-grid-item><n-statistic label="营收增长(收入同比增幅)" :value="fmtPct(finData.revenue_growth)" /></n-grid-item>
             <n-grid-item><n-statistic label="毛利率(收入减去成本后的利润占比，越高盈利能力越强)" :value="fmtPct(finData.gross_margin)" /></n-grid-item>
             <n-grid-item><n-statistic label="ROE(净资产收益率,盈利能力)" :value="fmtPct(finData.roe)" /></n-grid-item>
             <n-grid-item><n-statistic label="资产负债率(总负债÷总资产，越高说明负债越多，风险越大)" :value="fmtPct(finData.debt_ratio)" /></n-grid-item>
-            <n-grid-item><n-statistic label="质押比例(大股东质押股份占比，越高风险越大)" :value="fmtPct(finData.pledge_ratio)" /></n-grid-item>
-            <n-grid-item><n-statistic label="商誉(收购溢价部分，越高若减值风险越大)" :value="fmtMoney(finData.goodwill)" /></n-grid-item>
-            <n-grid-item><n-statistic label="大股东减持" :value="finData.major_reduction || '--'" /></n-grid-item>
-            <n-grid-item><n-statistic label="审计意见" :value="finData.auditor_change || '--'" /></n-grid-item>
+            <n-grid-item><n-statistic label="质押比例(大股东质押占比，越高平仓风险越大)" :value="fmtPct(finData.pledge_ratio)" /></n-grid-item>
+            <n-grid-item><n-statistic label="商誉(收购溢价，越高减值风险越大)" :value="fmtMoney(finData.goodwill)" /></n-grid-item>
+            <n-grid-item><n-statistic label="大股东减持(重要股东卖出股份)" :value="finData.major_reduction || '--'" /></n-grid-item>
+            <n-grid-item><n-statistic label="审计意见(财报可信度)" :value="finData.auditor_change || '--'" /></n-grid-item>
           </n-grid>
         </n-collapse-item>
       </n-collapse>
