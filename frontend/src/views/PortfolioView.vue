@@ -8,13 +8,13 @@
       </n-space>
     </div>
 
-    <n-modal v-model:show="showAdd" title="添加持仓" preset="card" style="width:420px;max-width:95vw">
+    <n-modal v-model:show="showAdd" :title="isEditing ? '编辑持仓' : '添加持仓'" preset="card" style="width:420px;max-width:95vw">
       <n-form>
         <n-form-item label="股票代码">
-          <n-input v-model:value="form.symbol" placeholder="如 000001" />
+          <n-input v-model:value="form.symbol" placeholder="如 000001" :disabled="isEditing" />
         </n-form-item>
         <n-form-item label="股票名称">
-          <n-input v-model:value="form.name" placeholder="如 平安银行" />
+          <n-input v-model:value="form.name" placeholder="如 平安银行" :disabled="isEditing" />
         </n-form-item>
         <n-form-item label="持仓数量">
           <n-input-number v-model:value="form.quantity" :min="0" style="width:100%" />
@@ -73,6 +73,7 @@ import { usePortfolioStore, type PortfolioHolding } from '../stores/portfolio';
 const portfolioStore = usePortfolioStore();
 const message = useMessage();
 const showAdd = ref(false);
+const isEditing = ref(false);
 const refreshing = ref(false);
 const form = reactive({ symbol: '', name: '', quantity: 0, averageCost: 0 });
 let nameTimer: ReturnType<typeof setTimeout> | null = null;
@@ -97,6 +98,7 @@ watch(() => form.symbol, (value) => {
 
 function openAdd(): void {
   resetForm();
+  isEditing.value = false;
   showAdd.value = true;
 }
 
@@ -123,6 +125,7 @@ async function refreshPrices(): Promise<void> {
 }
 
 function editHolding(row: PortfolioHolding): void {
+  isEditing.value = true;
   form.symbol = row.symbol;
   form.name = row.name;
   form.quantity = row.quantity;
