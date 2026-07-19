@@ -110,7 +110,7 @@ class EastMoneyStockProvider(StockProvider):
         code = normalize_symbol(symbol)
         data = await self._get_quote_data(code)
         price = _scaled_decimal(data.get("f43"))
-        if price <= 0:
+        if price is None or price <= 0:
             raise StockException(
                 "East Money quote price is empty",
                 provider=self.provider_name.value,
@@ -197,7 +197,19 @@ class EastMoneyStockProvider(StockProvider):
             Unified financial indicator schema.
         """
         code = normalize_symbol(symbol)
-        quote_data = await self._get_quote_data(code)
+        # Quote data from push2 endpoint may be unavailable (server drops connections).
+        # Financial data from datacenter API still works, so we gracefully degrade
+        # by returning None for quote-derived fields (PE/PB/market_cap).
+        quote_data: dict[str, Any] = {}
+        try:
+            quote_data = await self._get_quote_data(code)
+        except Exception as exc:
+            logger.debug(
+                "East Money quote data unavailable for financials (will use fallback): "
+                "symbol={symbol} error={error}",
+                symbol=code,
+                error=str(exc),
+            )
         financial_data = await self._get_latest_financial_data(code)
         return FinancialIndicators(
             symbol=code,
@@ -216,8 +228,8 @@ class EastMoneyStockProvider(StockProvider):
             current_ratio=_float_or_none(financial_data.get("LD")),
             quick_ratio=_float_or_none(financial_data.get("SD")),
             operating_cashflow=_float_or_none(financial_data.get("NETCASH_OPERATE_PK")),
-            pe_ttm=_float_or_none(_scaled_decimal(quote_data.get("f162"))),
-            pb=_float_or_none(_scaled_decimal(quote_data.get("f167"))),
+            pe_ttm=_maybe_quote_pe(quote_data.get("f162")),
+            pb=_maybe_quote_pb(quote_data.get("f167")),
             market_cap=_float_or_none(quote_data.get("f116")),
             total_shares=_float_or_none(
                 financial_data.get("TOTAL_SHARE") or quote_data.get("f117")
@@ -284,12 +296,12 @@ class EastMoneyStockProvider(StockProvider):
         except StockException:
             raise
         except Exception as exc:
-            raise StockException(
-                "East Money quote request failed",
-                provider=self.provider_name.value,
+            logger.warning(
+                "East Money quote request failed: symbol={symbol} error={error}",
                 symbol=symbol,
-                cause=exc,
-            ) from exc
+                error=str(exc),
+            )
+            return {}
 
     async def _get_latest_financial_data(self, symbol: str) -> dict[str, Any]:
         url = "https://datacenter.eastmoney.com/securities/api/data/v1/get"
@@ -359,6 +371,28 @@ def _scaled_decimal(value: object) -> Decimal:
         return Decimal(str(value)) / Decimal("100")
     except InvalidOperation:
         return Decimal("0")
+
+
+def _maybe_quote_pe(value: object) -> float | None:
+    """Return PE from quote data, scaled by 100, or None if unavailable."""
+    if value is None or value == "-":
+        return None
+    try:
+        scaled = float(str(value)) / 100.0
+        return scaled if scaled > 0 else None
+    except (TypeError, ValueError, InvalidOperation):
+        return None
+
+
+def _maybe_quote_pb(value: object) -> float | None:
+    """Return PB from quote data, scaled by 100, or None if unavailable."""
+    if value is None or value == "-":
+        return None
+    try:
+        scaled = float(str(value)) / 100.0
+        return scaled if scaled > 0 else None
+    except (TypeError, ValueError, InvalidOperation):
+        return None
 
 
 def _float_or_none(value: object) -> float | None:

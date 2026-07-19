@@ -15,6 +15,7 @@ from backend.core.exceptions import CacheException
 
 _redis_client_instance: Redis | None = None
 _redis_cache_instance: RedisCache | None = None
+_redis_available: bool = True
 
 def _get_client() -> Redis:
     global _redis_client_instance
@@ -27,6 +28,8 @@ def _get_client() -> Redis:
                 decode_responses=False,
             )
         except Exception as exc:
+            global _redis_available
+            _redis_available = False
             logger.warning("Redis client creation failed: {error}", error=str(exc))
             return None
     return _redis_client_instance
@@ -36,6 +39,8 @@ class RedisCache:
         self._redis = None
     
     async def _get_redis(self):
+        if not _redis_available:
+            return None
         if self._redis is None:
             self._redis = _get_client()
         return self._redis
@@ -102,4 +107,4 @@ class RedisCache:
 redis_cache = RedisCache()
 
 async def check_redis_health() -> bool:
-    return False
+    return _redis_available

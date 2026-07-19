@@ -7,11 +7,36 @@ Python Version: 3.11.9
 
 from __future__ import annotations
 
+import os
+import tempfile
+
+# Fix SSL keylog file permission issue caused by security software.
+# The system environment variable SSLKEYLOGFILE points to a non-writable path,
+# causing ALL HTTPS requests to fail with PermissionError.
+_ssl_keylog = os.environ.get("SSLKEYLOGFILE")
+if _ssl_keylog:
+    try:
+        # Test if we can write to the configured path
+        open(_ssl_keylog, "a").close()
+    except (OSError, PermissionError):
+        # Redirect to a writable temp file or disable it
+        writable_path = os.path.join(tempfile.gettempdir(), "ssl_keylog.txt")
+        os.environ["SSLKEYLOGFILE"] = writable_path
+        # Ensure the file is writable
+        try:
+            open(writable_path, "a").close()
+        except (OSError, PermissionError):
+            # If still fails, disable SSL key logging entirely
+            os.environ.pop("SSLKEYLOGFILE", None)
+del _ssl_keylog, writable_path
+
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from loguru import logger
 
 from backend.api.v1.router import api_router
@@ -77,6 +102,15 @@ def create_app() -> FastAPI:
     )
     register_exception_handlers(app, settings)
     app.include_router(api_router, prefix=settings.api_prefix)
+
+    # Serve built frontend static files for standalone deployments
+    frontend_dist = Path(__file__).resolve().parent.parent / "frontend" / "dist"
+    if frontend_dist.is_dir():
+        logger.info("Mounting frontend static files from {dir}", dir=str(frontend_dist))
+        app.mount("/", StaticFiles(directory=str(frontend_dist), html=True), name="frontend")
+    else:
+        logger.info("No frontend dist found at {dir}; API-only mode", dir=str(frontend_dist))
+
     return app
 
 
