@@ -18,7 +18,7 @@ const stockStore = useStockStore();
 async function doSearch() {
   if (!keyword.value.trim()) return;
   loading.value = true;
-  await stockStore.search(keyword.value.trim());
+  await stockStore.search(keyword.value.trim(), 'ALL');
   emit('search', stockStore.searchResults);
   loading.value = false;
 }

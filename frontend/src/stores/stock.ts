@@ -92,9 +92,30 @@ export const useStockStore = defineStore('stock', () => {
     loading.value = true;
     error.value = null;
     try {
-      const res = await searchStocks(keyword, market);
-      if (res.code === 0 && res.data) {
-        searchResults.value = res.data.map((item) => normalizeStockIdentity(item as Record<string, unknown>));
+      if (market === 'ALL') {
+        const markets = ['A', 'HK', 'US'];
+        const results = await Promise.all(markets.map(function(m) { return searchStocks(keyword, m); }));
+        var all = [];
+        for (var r of results) {
+          if (r.code === 0 && r.data) {
+            for (var item of r.data) {
+              all.push(normalizeStockIdentity(item));
+            }
+          }
+        }
+        var seen = new Set();
+        searchResults.value = [];
+        for (var item of all) {
+          if (!seen.has(item.symbol)) {
+            seen.add(item.symbol);
+            searchResults.value.push(item);
+          }
+        }
+      } else {
+        const res = await searchStocks(keyword, market);
+        if (res.code === 0 && res.data) {
+          searchResults.value = res.data.map((item) => normalizeStockIdentity(item as Record<string, unknown>));
+        }
       }
     } catch (err: unknown) {
       error.value = err instanceof Error ? err.message : String(err);
