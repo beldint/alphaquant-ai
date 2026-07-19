@@ -7,7 +7,7 @@
     </n-grid>
   </div>
 <n-collapse class="mt-12">
-<n-collapse-item title="指标通俗解释（小白也能看懂）">
+<n-collapse-item title="指标通俗解释">
 <n-p style="font-size:13px;line-height:1.8;color:#555">
 <b>移动平均线（MA）</b>：将过去N天的收盘价加起来除以N，得到一条平滑的曲线。
 MA5表示最近5天的平均价格，MA10是10天，MA20是20天，MA60是60天（约3个月）。
