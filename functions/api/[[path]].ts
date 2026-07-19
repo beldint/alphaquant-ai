@@ -676,10 +676,6 @@ export async function onRequest(context) {
         const closes = (quote.close || []).filter((value) => value !== null);
         if (closes.length > 5) {
           let technical = 8;
-          const fundamental = 12;
-          const solvency = 8;
-          const valuation = 5;
-          const risk = 12;
           const last = closes[closes.length - 1];
           const prev5 = closes[closes.length - 5];
           const prev20 = closes[Math.max(0, closes.length - 20)];
@@ -700,7 +696,7 @@ export async function onRequest(context) {
             if (avg5 > avg10) technical += 3;
           }
           technical = Math.min(technical, 20);
-          const total = Math.min(fundamental + solvency + technical + valuation + risk, 100);
+          const total = null;
           const strengths = [];
           const risks = [];
           if (technical >= 15) strengths.push("\u6280\u672f\u8d8b\u52bf\u8f83\u5f3a");
@@ -712,23 +708,20 @@ export async function onRequest(context) {
             data: {
               symbol,
               name: symbol,
-              score_date: new Date().toISOString().slice(0, 10),
-              fundamental_score: fundamental,
-              solvency_score: solvency,
-              technical_score: technical,
-              valuation_score: valuation,
-              risk_score: risk,
-              total_score: total,
-              rating: total >= 85 ? "A" : total >= 70 ? "B" : total >= 55 ? "C" : "D",
-              strengths,
-              risks,
-              suggestion: total >= 70 ? "\u5177\u5907\u4e00\u5b9a\u7814\u7a76\u4ef7\u503c\uff0c\u9700\u7ed3\u5408\u8d22\u52a1\u6570\u636e\u8fdb\u4e00\u6b65\u786e\u8ba4\u3002" : "\u6570\u636e\u4e0d\u8db3\uff0c\u5efa\u8bae\u5148\u89c2\u671b\u3002",
-              raw_breakdown: {
-                weights: { fundamental: 30, solvency: 20, technical: 20, valuation: 15, risk: 15 },
-                fallback: true,
-              },
+              score_date: null,
+              fundamental_score: null,
+              solvency_score: null,
+              technical_score: null,
+              valuation_score: null,
+              risk_score: null,
+              total_score: null,
+              rating: "--",
+              strengths: [],
+              risks: ["技术数据已获取，但财务和风险数据未能获取，无法进行完整评分"],
+              suggestion: "当前股票由于财务数据未能获取，仅能根据技术指标进行部分分析，无法进行完整评分。",
+              data_insufficient: true,
             },
-          });
+          })
         }
       }
     } catch (error) {
@@ -741,12 +734,13 @@ export async function onRequest(context) {
       data: {
         symbol,
         name: symbol,
-        fundamental_score: 12,
-        solvency_score: 8,
-        technical_score: 8,
-        valuation_score: 5,
-        risk_score: 12,
-        total_score: 45,
+        fundamental_score: null,
+        solvency_score: null,
+        technical_score: null,
+        valuation_score: null,
+        risk_score: null,
+        total_score: null,
+        data_insufficient: true,
         rating: "D",
         strengths: [],
         risks: ["\u7814\u7a76\u8bc4\u5206\u6570\u636e\u6e90\u6682\u4e0d\u53ef\u7528"],

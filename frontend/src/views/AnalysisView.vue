@@ -151,27 +151,15 @@ const downloadHtml = () => {
 }
 
 function downloadViaForm(content, filename, contentType) {
-  var form = document.createElement('form');
-  form.method = 'POST';
-  form.action = '/api/v1/analysis/download-content';
-  form.style.display = 'none';
-  var items = [
-    { name: 'content', value: content },
-    { name: 'filename', value: filename },
-    { name: 'content_type', value: contentType }
-  ];
-  for (var i = 0; i < items.length; i++) {
-    var input = document.createElement('input');
-    input.type = 'hidden';
-    input.name = items[i].name;
-    input.value = items[i].value;
-    form.appendChild(input);
-  }
-  document.body.appendChild(form);
-  form.submit();
-  setTimeout(function() {
-    document.body.removeChild(form);
-  }, 0);
+  const blob = new Blob([content], { type: contentType });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
 }
 
 
