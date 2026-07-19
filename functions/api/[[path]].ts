@@ -184,7 +184,7 @@ function parseAnalysisPayload(requestText, url) {
   };
 }
 
-function stockDisplayName(symbol) { const cleanSymbol = symbol.replace(/\.[A-Z]+$/, " \); const item = STOCKS.find((stock) => stock.symbol === cleanSymbol); if (item) return item.name; const partial = STOCKS.find((stock) => cleanSymbol.includes(stock.symbol) || stock.symbol.includes(cleanSymbol)); return partial ? partial.name : cleanSymbol; }
+function stockDisplayName(symbol) { const cleanSymbol = symbol.replace(/\.[A-Z]+$/, ""); const item = STOCKS.find((stock) => stock.symbol === cleanSymbol); if (item) return item.name; const partial = STOCKS.find((stock) => cleanSymbol.includes(stock.symbol) || stock.symbol.includes(cleanSymbol)); return partial ? partial.name : cleanSymbol; }
 
 function roundNumber(value, digits = 2) {
   if (!Number.isFinite(value)) return null;
