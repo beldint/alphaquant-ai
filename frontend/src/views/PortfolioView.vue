@@ -17,7 +17,7 @@
           <n-input v-model:value="form.name" placeholder="如 平安银行" :disabled="isEditing" />
         </n-form-item>
         <n-form-item label="持仓数量">
-          <n-input-number v-model:value="form.quantity" :min="0" style="width:100%" />
+          <n-input-number v-model:value="form.quantity" :min="1" :step="1" :precision="0" style="width:100%" />
         </n-form-item>
         <n-form-item label="成本价">
           <n-input-number v-model:value="form.averageCost" :min="0" :precision="2" style="width:100%" />
@@ -57,6 +57,7 @@
       :data="portfolioStore.holdings"
       :bordered="false"
       size="small"
+      :pagination="pagination"
     />
     </div>
     <n-empty v-if="portfolioStore.holdings.length === 0" description="暂无持仓数据，点击上方添加持仓" style="margin-top:60px" />
@@ -76,6 +77,7 @@ const showAdd = ref(false);
 const isEditing = ref(false);
 const refreshing = ref(false);
 const form = reactive({ symbol: '', name: '', quantity: 0, averageCost: 0 });
+const pagination = reactive({ page: 1, pageSize: 10, showSizePicker: true, pageSizes: [10, 20, 50] });
 let nameTimer: ReturnType<typeof setTimeout> | null = null;
 let codeTimer: ReturnType<typeof setTimeout> | null = null;
 
