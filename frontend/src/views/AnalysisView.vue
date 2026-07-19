@@ -30,7 +30,7 @@
       <n-grid :cols="2" :x-gap="12" :y-gap="12" class="mb-24" responsive="screen">
         <n-grid-item><n-statistic label="股票代码" :value="stockStore.analysisResult.symbol" /></n-grid-item>
         <n-grid-item><n-statistic label="数据时间" :value="stockStore.analysisResult.data_timestamp.slice(0, 10)" /></n-grid-item>
-        <n-grid-item span="2"><n-statistic label="分析模型" :value="stockStore.analysisResult.model" /></n-grid-item>
+        <n-grid-item span="2"><n-statistic label="分析模型" :value="getModelLabel(stockStore.analysisResult.model)" /></n-grid-item>
       </n-grid>
       <AnalysisReport :report="stockStore.analysisResult" :klineData="stockStore.klineData" :quote="stockStore.currentQuote" :loading="loading" />
       
@@ -95,6 +95,12 @@ if (initModel !== '__custom__') {
     localStorage.setItem('ai_base_url', found.apiBaseUrl);
   }
 }
+function getModelLabel(val: string): string {
+  if (val === '__custom__') return '自定义';
+  const found = modelOptions.find(o => o.value === val);
+  return found ? found.label : val;
+}
+
 const modelHint = computed(() => {
   if (aiCustom.value && aiModel.value === '__custom__') return '当前：' + aiCustom.value;
   const found = modelOptions.find(o => o.value === aiModel.value);
