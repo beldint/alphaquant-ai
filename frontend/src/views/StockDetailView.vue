@@ -38,7 +38,14 @@
         <n-grid-item><n-statistic label="技术趋势(20分)" :value="fmtScore(stockScore.technical_score)" :tabular-nums="true" /><n-progress v-if="stockScore.technical_score != null" type="line" :percentage="roundTo2(stockScore.technical_score / 20 * 100)" :height="6" :border-radius="4" color="#18a058" /></n-grid-item>
         <n-grid-item><n-statistic label="估值(15分)" :value="fmtScore(stockScore.valuation_score)" :tabular-nums="true" /><n-progress v-if="stockScore.valuation_score != null" type="line" :percentage="roundTo2(stockScore.valuation_score / 15 * 100)" :height="6" :border-radius="4" color="#8a2be2" /></n-grid-item>
         <n-grid-item><n-statistic label="风险(15分)" :value="fmtScore(stockScore.risk_score)" :tabular-nums="true" /><n-progress v-if="stockScore.risk_score != null" type="line" :percentage="roundTo2(stockScore.risk_score / 15 * 100)" :height="6" :border-radius="4" color="#d03050" /></n-grid-item>
-      </n-grid>
+      </n-grid><n-p depth="3" style="font-size:12px;margin-top:8px;color:#888;line-height:1.6">
+评分说明：
+• 基本面（30分）——考察公司的盈利能力（ROE）、成长性（收入增长）、财务健康度，得分越高公司基本面越好。
+• 偿债能力（20分）——考察公司的资产负债率、现金流状况，得分越高财务越安全。
+• 技术趋势（20分）——考察股价的短期和中期走势，得分越高趋势越好。
+• 估值（15分）——考察市盈率PE和市净率PB是否合理，估值越低得分越高。
+• 风险（15分）——考察质押比例、大股东减持、审计意见等风险因素，风险越低得分越高。
+</n-p>
     </n-card>
     <n-card size="small" class="mb-24" v-if="stockScore && stockScore.data_insufficient">
       <template #header><n-h4 prefix="bar" style="margin:0">股票评分</n-h4></template>
@@ -68,11 +75,11 @@
             <n-grid-item><n-statistic label="PE(市率,估值指标)" :value="fmtNum(finData.pe_ttm)" /></n-grid-item>
             <n-grid-item><n-statistic label="PB(市净率,估值指标)" :value="fmtNum(finData.pb)" /></n-grid-item>
             <n-grid-item><n-statistic label="营收增长" :value="fmtPct(finData.revenue_growth)" /></n-grid-item>
-            <n-grid-item><n-statistic label="毛利率" :value="fmtPct(finData.gross_margin)" /></n-grid-item>
+            <n-grid-item><n-statistic label="毛利率(收入减去成本后的利润占比，越高盈利能力越强)" :value="fmtPct(finData.gross_margin)" /></n-grid-item>
             <n-grid-item><n-statistic label="ROE(净资产收益率,盈利能力)" :value="fmtPct(finData.roe)" /></n-grid-item>
-            <n-grid-item><n-statistic label="资产负债率" :value="fmtPct(finData.debt_ratio)" /></n-grid-item>
-            <n-grid-item><n-statistic label="质押比例" :value="fmtPct(finData.pledge_ratio)" /></n-grid-item>
-            <n-grid-item><n-statistic label="商誉" :value="fmtMoney(finData.goodwill)" /></n-grid-item>
+            <n-grid-item><n-statistic label="资产负债率(总负债÷总资产，越高说明负债越多，风险越大)" :value="fmtPct(finData.debt_ratio)" /></n-grid-item>
+            <n-grid-item><n-statistic label="质押比例(大股东质押股份占比，越高风险越大)" :value="fmtPct(finData.pledge_ratio)" /></n-grid-item>
+            <n-grid-item><n-statistic label="商誉(收购溢价部分，越高若减值风险越大)" :value="fmtMoney(finData.goodwill)" /></n-grid-item>
             <n-grid-item><n-statistic label="大股东减持" :value="finData.major_reduction || '--'" /></n-grid-item>
             <n-grid-item><n-statistic label="审计意见" :value="finData.auditor_change || '--'" /></n-grid-item>
           </n-grid>

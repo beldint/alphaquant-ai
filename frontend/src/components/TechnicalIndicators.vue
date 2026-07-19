@@ -6,6 +6,33 @@
       </n-grid-item>
     </n-grid>
   </div>
+<n-collapse class="mt-12">
+<n-collapse-item title="指标通俗解释（小白也能看懂）">
+<n-p style="font-size:13px;line-height:1.8;color:#555">
+<b>移动平均线（MA）</b>：将过去N天的收盘价加起来除以N，得到一条平滑的曲线。
+MA5表示最近5天的平均价格，MA10是10天，MA20是20天，MA60是60天（约3个月）。
+如果短期均线（如MA5）在长期均线（如MA20）上方，说明股价处于上涨趋势；反之则下跌趋势。
+<br/><br/>
+<b>MACD（指数平滑异同移动平均线）</b>：由DIF线、DEA线和MACD柱组成。
+• DIF = 快线（12日EMA）- 慢线（26日EMA），反映短期与长期趋势的差距
+• DEA = DIF的9日平均线，是DIF的慢速线
+• MACD柱 = (DIF - DEA) × 2，柱子越长，趋势越强
+当DIF上穿DEA（金叉）时，是买入信号；下穿DEA（死叉）时，是卖出信号。
+<br/><br/>
+<b>RSI（相对强弱指标）</b>：衡量近期价格涨跌的力度，取值范围0-100。
+• RSI > 70：超买区，股价可能过热，有回调风险
+• RSI < 30：超卖区，股价可能过度下跌，有望反弹
+• RSI在50附近：市场处于平衡状态
+<br/><br/>
+<b>KDJ（随机指标）</b>：判断短期买卖信号的指标。
+• K值（快线）：反应最灵敏，变化最快
+• D值（慢线）：反应最慢，是K值的3日平均
+• J值（最快线）：是K和D的差值放大，变化最快
+当K线上穿D线（金叉）时，是买入信号；下穿D线（死叉）时，是卖出信号。
+通常K值>80考虑卖出，K值<20考虑买入。
+</n-p>
+</n-collapse-item>
+</n-collapse>
 </template>
 <script setup lang="ts">
 import { computed } from 'vue';
