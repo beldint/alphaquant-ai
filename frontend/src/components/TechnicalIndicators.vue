@@ -36,10 +36,10 @@ const items = computed(() => {
   const mid = (highest + lowest) / 2;
   const k = (last - lowest) / (highest - lowest) * 100; const d = ((closes.slice(-3).reduce((s, c) => s + (c - lowest) / (highest - lowest), 0)) / 3) * 100; const j = 3 * k - 2 * d;
   return [
-    { label: 'MA5', value: ma5v }, { label: 'MA10', value: ma10v }, { label: 'MA20', value: ma20v },
-    { label: 'MA60', value: ma60v }, { label: 'MACD DIF', value: macd.dif }, { label: 'MACD DEA', value: macd.dea },
-    { label: 'MACD', value: macd.macd }, { label: 'RSI(14)', value: rsi }, { label: 'KDJ K', value: k },
-    { label: 'KDJ D', value: d }, { label: 'KDJ J', value: j },
+    { label: 'MA5（5日移动均线）', value: ma5v }, { label: 'MA10（10日移动均线）', value: ma10v }, { label: 'MA20（20日移动均线）', value: ma20v },
+    { label: 'MA60（60日移动均线）', value: ma60v }, { label: 'DIF（差离值）', value: macd.dif }, { label: 'DEA（信号线）', value: macd.dea },
+    { label: 'MACD柱（柱状图）', value: macd.macd }, { label: 'RSI（相对强弱指数，14日）', value: rsi }, { label: 'K值（快线）', value: k },
+    { label: 'D值（慢线）', value: d }, { label: 'J值（最快线）', value: j },
   ];
 });
 function fmtVal(value: number | null): string { return value == null ? '--' : value.toFixed(2); }

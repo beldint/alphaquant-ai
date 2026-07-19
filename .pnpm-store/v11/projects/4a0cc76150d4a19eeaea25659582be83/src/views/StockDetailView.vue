@@ -65,11 +65,11 @@
       <n-collapse>
         <n-collapse-item title="财务数据" name="finance">
           <n-grid :cols="2" :x-gap="12" :y-gap="8" responsive="screen">
-            <n-grid-item><n-statistic label="PE(TTM)" :value="fmtNum(finData.pe_ttm)" /></n-grid-item>
-            <n-grid-item><n-statistic label="PB" :value="fmtNum(finData.pb)" /></n-grid-item>
+            <n-grid-item><n-statistic label="PE(市率,估值指标)" :value="fmtNum(finData.pe_ttm)" /></n-grid-item>
+            <n-grid-item><n-statistic label="PB(市净率,估值指标)" :value="fmtNum(finData.pb)" /></n-grid-item>
             <n-grid-item><n-statistic label="营收增长" :value="fmtPct(finData.revenue_growth)" /></n-grid-item>
             <n-grid-item><n-statistic label="毛利率" :value="fmtPct(finData.gross_margin)" /></n-grid-item>
-            <n-grid-item><n-statistic label="ROE" :value="fmtPct(finData.roe)" /></n-grid-item>
+            <n-grid-item><n-statistic label="ROE(净资产收益率,盈利能力)" :value="fmtPct(finData.roe)" /></n-grid-item>
             <n-grid-item><n-statistic label="资产负债率" :value="fmtPct(finData.debt_ratio)" /></n-grid-item>
             <n-grid-item><n-statistic label="质押比例" :value="fmtPct(finData.pledge_ratio)" /></n-grid-item>
             <n-grid-item><n-statistic label="商誉" :value="fmtMoney(finData.goodwill)" /></n-grid-item>
