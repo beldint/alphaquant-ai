@@ -5,6 +5,27 @@
         <h2>{{ displayName }} <span class="text-muted" style="font-weight:400;font-size:14px">{{ displayMarket }}</span></h2>
       </div>
       <n-button size="small" type="primary" @click="goToAnalysis">AI分析</n-button>
+<n-card size="small" class="mb-24" v-if="quote && quote.price">
+      <n-grid :cols="2" :x-gap="12" :y-gap="8" responsive="screen">
+        <n-grid-item>
+          <div style="display:flex;align-items:baseline;gap:8px">
+            <span style="font-size:28px;font-weight:700">{{ fmtPrice(quote.price) }}</span>
+            <n-tag :type="quote.pct_change >= 0 ? 'error' : 'success'" size="small" bordered>
+              {{ quote.pct_change >= 0 ? '+' : '' }}{{ fmtPct(quote.pct_change) }}
+            </n-tag>
+            <span :style="{color: quote.change >= 0 ? '#f56c6c' : '#67c23a', fontSize: '14px'}">
+              {{ quote.change >= 0 ? '+' : '' }}{{ fmtPrice(quote.change) }}
+            </span>
+          </div>
+        </n-grid-item>
+        <n-grid-item>
+          <n-grid :cols="2" :x-gap="8" :y-gap="4">
+            <n-grid-item><n-statistic label="成交量" :value="fmtVolume(quote.volume)" :tabular-nums="true" /></n-grid-item>
+            <n-grid-item><n-statistic label="成交额" :value="fmtAmount(quote.amount)" :tabular-nums="true" /></n-grid-item>
+          </n-grid>
+        </n-grid-item>
+      </n-grid>
+    </n-card>
 <n-card size="small" class="mb-24" v-if="stockScore && !stockScore.data_insufficient">
       <template #header><n-space align="center"><n-h4 prefix="bar" style="margin:0">股票评分</n-h4><n-tag size="small" :type="ratingType(stockScore.rating)">评级 {{ stockScore.rating || '--' }}</n-tag></n-space></template>
       <n-grid :cols="2" :x-gap="12" :y-gap="12" responsive="screen">
@@ -99,6 +120,9 @@ async function fetchFinancials(): Promise<void> { try { const response = await g
 function scoreColor(score: number): string { if (score >= 80) return '#18a058'; if (score >= 65) return '#2080f0'; if (score >= 50) return '#f0a020'; return '#d03050'; }
 function ratingType(rating: string): 'default' | 'success' | 'info' | 'warning' | 'error' { if (rating === 'A') return 'success'; if (rating === 'B') return 'info'; if (rating === 'C') return 'warning'; if (rating === 'D') return 'error'; return 'default'; }
 function switchPeriod(period: string): void { klinePeriod.value = period; const days = period === '1M' ? 30 : period === '3M' ? 90 : 180; const end = new Date().toISOString().slice(0, 10); const start = new Date(Date.now() - days * 86400000).toISOString().slice(0, 10); void stockStore.fetchKline(symbol.value, 'A', start, end); }
+function fmtPrice(v: any): string { var n = Number(v); return Number.isFinite(n) ? n.toFixed(2) : '--'; }
+function fmtVolume(v: any): string { var n = Number(v); if (!Number.isFinite(n)) return '--'; if (n >= 1e8) return (n / 1e8).toFixed(2) + ' 亿'; if (n >= 1e4) return (n / 1e4).toFixed(2) + ' 万'; return n.toFixed(0); }
+function fmtAmount(v: any): string { var n = Number(v); if (!Number.isFinite(n)) return '--'; if (n >= 1e8) return (n / 1e8).toFixed(2) + ' 亿'; if (n >= 1e4) return (n / 1e4).toFixed(2) + ' 万'; return n.toFixed(0); }
 function refreshPageData(): void { stockStore.clear(); void fetchFinancials(); void stockStore.fetchScore(symbol.value); void stockStore.fetchQuote(symbol.value); switchPeriod('1M'); }
 onMounted(refreshPageData);
 
