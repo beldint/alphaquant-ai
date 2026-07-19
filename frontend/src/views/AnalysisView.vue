@@ -94,6 +94,7 @@ if (initModel !== '__custom__') {
     aiBaseUrl.value = found.apiBaseUrl;
     localStorage.setItem('ai_base_url', found.apiBaseUrl);
   }
+}
 
 const modelHint = computed(() => {
   if (aiCustom.value && aiModel.value === '__custom__') return '当前：' + aiCustom.value;

@@ -21,7 +21,7 @@ const options = computed(() => {
       { type: 'candlestick', data: ohlc, itemStyle: { color: '#00c853', color0: '#ff1744', borderColor: '#00c853', borderColor0: '#ff1744' } },
       { type: 'bar', xAxisIndex: 1, yAxisIndex: 1, data: volumes.map((v, i) => ({ value: v, itemStyle: { color: props.data[i].close_price >= props.data[i].open_price ? '#00c853' : '#ff1744' } })) },
     ],
-    tooltip: { trigger: 'axis', axisPointer: { type: 'cross' }, backgroundColor: '#1a1a22', borderColor: '#333', textStyle: { color: '#e5e5e5', fontSize: 11 } },
+    tooltip: { trigger: 'axis', axisPointer: { type: 'cross' }, backgroundColor: '#1a1a22', borderColor: '#333', textStyle: { color: '#e5e5e5', fontSize: 11 }, formatter: function(p) { if (!p || p.length === 0) return ''; var d = p[0]; var i = d.dataIndex; var o = props.data[i].open_price; var c = props.data[i].close_price; var l = props.data[i].low_price; var h = props.data[i].high_price; var v = props.data[i].volume; return '<div style="font-weight:bold;margin-bottom:4px">' + d.axisValue + '</div><div>开盘价: ' + o.toFixed(2) + '</div><div>收盘价: ' + c.toFixed(2) + '</div><div>最低价: ' + l.toFixed(2) + '</div><div>最高价: ' + h.toFixed(2) + '</div><div>成交量: ' + (v >= 1e8 ? (v/1e8).toFixed(2) + '亿' : v >= 1e4 ? (v/1e4).toFixed(2) + '万' : v.toFixed(0)) + '</div>'; } },
     dataZoom: [{ type: 'inside', xAxisIndex: [0, 1], start: 0, end: 100 }],
   };
 });
