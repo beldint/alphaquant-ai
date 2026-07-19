@@ -113,6 +113,14 @@ const displayName = computed(() => {
   if (stockName.value) return stockName.value;
   return symbol.value;
 });
+watch(quote, function(val) {
+  if (val && val.name && val.name !== '--' && val.name !== symbol.value) {
+    stockName.value = val.name;
+    try { localStorage.setItem('sn_' + symbol.value, val.name); } catch {}
+  } else if (!stockName.value) {
+    void fetchStockName();
+  }
+}, { immediate: true });
 const displayMarket = computed(() => {
   var m = quote.value?.market || 'A';
   if (m === 'A') return 'A股';
@@ -124,7 +132,9 @@ const klineData = computed(() => stockStore.klineData);
 const stockScore = computed(() => stockStore.stockScore);
 const klinePeriod = ref('1M');
 const finData = ref<Record<string, any> | null>(null);
-const stockName = ref<string | null>(null);
+// Load cached stock name from localStorage
+var cachedName = localStorage.getItem('sn_' + symbol.value);
+const stockName = ref<string | null>(cachedName);
 function toNumber(value: unknown): number | null { if (value === null || value === undefined || value === '' || value === '--') return null; const numeric = Number(String(value).replace(/,/g, '').replace('%', '')); return Number.isFinite(numeric) ? numeric : null; }
 function fmtMoney(value: unknown): string { const numeric = toNumber(value); if (numeric === null || numeric === 0) return '--'; if (Math.abs(numeric) >= 1e8) return (numeric / 1e8).toFixed(2) + ' 亿'; if (Math.abs(numeric) >= 1e4) return (numeric / 1e4).toFixed(2) + ' 万'; return numeric.toFixed(2); }
 function fmtPct(value: unknown): string { const numeric = toNumber(value); return numeric === null ? '--' : numeric.toFixed(2) + '%'; }
@@ -132,7 +142,7 @@ function fmtNum(value: unknown): string { const numeric = toNumber(value); retur
 function fmtScore(value: number | null): string { return value === null || value === undefined ? '--' : value.toFixed(1); }
 function roundTo2(value: number): number { if (!Number.isFinite(value)) return 0; return Math.round(value * 100) / 100; }
 async function fetchFinancials(): Promise<void> { try { const response = await getFinancials(symbol.value); finData.value = Number(response.code) === 0 && response.data ? response.data : null; } catch { finData.value = null; } }
-async function fetchStockName(): Promise<void> { if (stockName.value) return; try { const res = await searchStocks(symbol.value.split('.')[0], quote.value?.market === 'HK' ? 'HK' : quote.value?.market === 'US' ? 'US' : 'A'); if (res.code === 0 && res.data && res.data.length > 0) { stockName.value = res.data[0].name; } } catch { /* ignore */ } }
+async function fetchStockName(): Promise<void> { if (stockName.value) return; try { var code = symbol.value.split('.')[0]; var mkt = quote.value?.market || 'A'; if (code.endsWith('HK')) mkt = 'HK'; if (code.endsWith('US')) mkt = 'US'; var res = await searchStocks(code, mkt); if (res.code === 0 && res.data && res.data.length > 0) { stockName.value = res.data[0].name; try { localStorage.setItem('sn_' + symbol.value, res.data[0].name); } catch {} } } catch { /* ignore */ } }
 function scoreColor(score: number): string { if (score >= 80) return '#18a058'; if (score >= 65) return '#2080f0'; if (score >= 50) return '#f0a020'; return '#d03050'; }
 function ratingType(rating: string): 'default' | 'success' | 'info' | 'warning' | 'error' { if (rating === 'A') return 'success'; if (rating === 'B') return 'info'; if (rating === 'C') return 'warning'; if (rating === 'D') return 'error'; return 'default'; }
 function switchPeriod(period: string): void { klinePeriod.value = period; const days = period === '1M' ? 30 : period === '3M' ? 90 : 180; const end = new Date().toISOString().slice(0, 10); const start = new Date(Date.now() - days * 86400000).toISOString().slice(0, 10); void stockStore.fetchKline(symbol.value, 'A', start, end); }
